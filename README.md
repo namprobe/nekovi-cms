@@ -17,7 +17,7 @@ cp .env.example .env.local
 
 ```bash
 # API Configuration
-NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+NEXT_PUBLIC_BASE_URL=http://localhost:5000
 NEXT_PUBLIC_CMS_API_PREFIX=/api/cms
 NEXT_PUBLIC_COMMON_API_PREFIX=/api/common
 
@@ -39,7 +39,7 @@ NODE_ENV=development
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | Backend API base URL | ✅ | `http://localhost:5000` |
+| `NEXT_PUBLIC_BASE_URL` | Backend API base URL | ✅ | `http://localhost:5000` |
 | `NEXT_PUBLIC_CMS_API_PREFIX` | CMS API prefix path | ✅ | `/api/cms` |
 | `NEXT_PUBLIC_COMMON_API_PREFIX` | Common API prefix path | ✅ | `/api/common` |
 | `NEXT_PUBLIC_JWT_SECRET` | JWT secret for token validation | ✅ | - |
@@ -144,7 +144,7 @@ For production deployment, make sure to set these environment variables:
 
 ```bash
 # Production API
-NEXT_PUBLIC_API_BASE_URL=https://your-api-domain.com
+NEXT_PUBLIC_BASE_URL=https://your-api-domain.com
 NEXT_PUBLIC_CMS_API_PREFIX=/api/cms
 NEXT_PUBLIC_COMMON_API_PREFIX=/api/common
 
