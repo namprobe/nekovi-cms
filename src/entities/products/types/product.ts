@@ -57,14 +57,23 @@ export interface ProductReview extends BaseEntity {
   title?: string
   comment?: string
   product?: Product
-  user?: any
+  user?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
 }
 
 export interface Tag extends BaseEntity {
   name: string
   description?: string
   productTags?: ProductTag[]
-  postTags?: any[]
+  postTags?: {
+    id: string
+    postId: string
+    tagId: string
+  }[]
 }
 
 export interface ProductTag extends BaseEntity {

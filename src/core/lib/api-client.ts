@@ -1,5 +1,16 @@
 import { env } from "@/core/config/env"
-import type { ApiResult, PaginateResult, ErrorCodeEnum } from "@/shared/types/common"
+import type { ApiResult, PaginateResult } from "@/shared/types/common"
+
+// Type guard for API response
+function isApiResponse(data: unknown): data is {
+  isSuccess?: boolean
+  data?: unknown
+  message?: string
+  errors?: string[]
+  errorCode?: string
+} {
+  return typeof data === 'object' && data !== null
+}
 
 interface RequestOptions extends RequestInit {
   timeout?: number
@@ -12,7 +23,7 @@ interface PaginationParams {
   search?: string
   sortBy?: string
   sortOrder?: "asc" | "desc"
-  [key: string]: any
+  [key: string]: string | number | boolean | undefined
 }
 
 //Note
@@ -102,7 +113,7 @@ class ApiClient {
 
       //parse response
       //content-type: application/json || text/plain || application/octet-stream || ...
-      let responseData: any
+      let responseData: unknown
       const contentType = response.headers.get("content-type")
 
       if (contentType && contentType.includes("application/json")) {
@@ -122,19 +133,21 @@ class ApiClient {
 
       // Success response
       if (response.ok) {
+        const apiData = isApiResponse(responseData) ? responseData : { data: responseData }
         return {
           isSuccess: true,
-          data: responseData.data || responseData,
-          message: responseData.message || "Success",
+          data: (apiData.data || responseData) as T,
+          message: apiData.message || "Success",
         }
       }
 
       // Error response - match with backend Result pattern
+      const apiError = isApiResponse(responseData) ? responseData : {}
       return {
         isSuccess: false,
-        message: responseData.message || `HTTP ${response.status}: ${response.statusText}`,
-        errors: responseData.errors || [],
-        errorCode: responseData.errorCode || response.status.toString(),
+        message: apiError.message || `HTTP ${response.status}: ${response.statusText}`,
+        errors: apiError.errors || [],
+        errorCode: apiError.errorCode || response.status.toString(),
       }
     } catch (error) {
       // Nếu có lỗi xảy ra thì xóa timeout và trả về kết quả lỗi
@@ -200,11 +213,11 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: "GET" })
   }
 
-  async post<T>(endpoint: string, data?: any, options?: RequestOptions): Promise<ApiResult<T>> {
+  async post<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<ApiResult<T>> {
     return this.request<T>(endpoint, { ...options, method: "POST", body: data ? JSON.stringify(data) : undefined })
   }
 
-  async put<T>(endpoint: string, data?: any, options?: RequestOptions): Promise<ApiResult<T>> {
+  async put<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<ApiResult<T>> {
     return this.request<T>(endpoint, { ...options, method: "PUT", body: data ? JSON.stringify(data) : undefined })
   }
 
@@ -212,7 +225,7 @@ class ApiClient {
     return this.request<T>(endpoint, { ...options, method: "DELETE" })
   }
 
-  async patch<T>(endpoint: string, data?: any, options?: RequestOptions): Promise<ApiResult<T>> {
+  async patch<T>(endpoint: string, data?: unknown, options?: RequestOptions): Promise<ApiResult<T>> {
     return this.request<T>(endpoint, { ...options, method: "PATCH", body: data ? JSON.stringify(data) : undefined })
   }
 
@@ -261,7 +274,7 @@ class ApiClient {
       clearTimeout(timeoutId)
 
       // Parse response
-      let responseData: any
+      let responseData: unknown
       const contentType = response.headers.get("content-type")
       
       if (contentType && contentType.includes("application/json")) {
@@ -280,19 +293,21 @@ class ApiClient {
 
       // Success response
       if (response.ok) {
+        const apiData = isApiResponse(responseData) ? responseData : { data: responseData }
         return {
           isSuccess: true,
-          data: responseData.data || responseData,
-          message: responseData.message || "Success",
+          data: (apiData.data || responseData) as T,
+          message: apiData.message || "Success",
         }
       }
 
       // Error response
+      const apiError = isApiResponse(responseData) ? responseData : {}
       return {
         isSuccess: false,
-        message: responseData.message || `HTTP ${response.status}: ${response.statusText}`,
-        errors: responseData.errors || [],
-        errorCode: responseData.errorCode || response.status.toString(),
+        message: apiError.message || `HTTP ${response.status}: ${response.statusText}`,
+        errors: apiError.errors || [],
+        errorCode: apiError.errorCode || response.status.toString(),
       }
 
     } catch (error) {
@@ -359,7 +374,7 @@ class ApiClient {
       }
 
       // Parse response
-      let responseData: any
+      let responseData: unknown
       const contentType = response.headers.get("content-type")
       
       if (contentType && contentType.includes("application/json")) {
@@ -374,6 +389,7 @@ class ApiClient {
       }
 
       // Error response - transform thành PaginateResult
+      const apiError = isApiResponse(responseData) ? responseData : {}
       return {
         isSuccess: false,
         items: [],
@@ -383,8 +399,8 @@ class ApiClient {
         pageSize: 10,
         hasPrevious: false,
         hasNext: false,
-        errors: responseData.errors || [responseData.message || "Request failed"],
-        errorCode: responseData.errorCode || response.status.toString(),
+        errors: apiError.errors || [apiError.message || "Request failed"],
+        errorCode: apiError.errorCode || response.status.toString(),
       }
 
     } catch (error) {
@@ -442,7 +458,7 @@ class ApiClient {
               errorCode: responseData.errorCode || xhr.status.toString(),
             })
           }
-        } catch (error) {
+        } catch {
           resolve({
             isSuccess: false,
             message: "Upload failed",

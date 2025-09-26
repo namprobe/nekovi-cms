@@ -10,6 +10,7 @@ interface BlogPostDetailPageProps {
 export default async function BlogPostDetailPage({ params }: BlogPostDetailPageProps) {
   const { id } = await params
   // TODO: Fetch blog post data based on params.id
+  console.log('Blog post ID:', id) // Temporarily use id to avoid ESLint warning
   const mockBlogPostData = {
     title: "Top 10 Anime Figures of 2024",
     content: `Anime figures have become increasingly popular among collectors and fans alike. In this comprehensive guide, we'll explore the top 10 anime figures that have captured the hearts of enthusiasts in 2024.

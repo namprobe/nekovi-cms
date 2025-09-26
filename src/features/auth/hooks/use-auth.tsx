@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useCallback } from 'react'
 import {
     useAuthStore,
     useAuthUser,
@@ -38,13 +38,8 @@ export function useAuth() {
     const accessTokenExpiresAt = useAuthAccessTokenExpiresAt()
     const isHydrated = useAuthIsHydrated()
 
-    // Auto-initialize auth state khi app load
-    useEffect(() => {
-        initializeAuth()
-    }, [])
-
     // Initialize authentication state
-    const initializeAuth = async () => {
+    const initializeAuth = useCallback(async () => {
         try {
             // Nếu có token trong store (từ localStorage persist)
             if (token) {
@@ -61,7 +56,12 @@ export function useAuth() {
             // Nếu token invalid, clear state
             await logout()
         }
-    }
+    }, [token, user, getProfile, logout])
+
+    // Auto-initialize auth state khi app load
+    useEffect(() => {
+        initializeAuth()
+    }, [initializeAuth])
 
      // Helper function: Check if token is expired
      const isTokenExpired = (expiresAt: Date): boolean => {

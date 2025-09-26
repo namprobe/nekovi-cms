@@ -26,7 +26,7 @@ interface FormDataOptions {
 /**
  * Build FormData từ object với support cho files
  */
-export function buildFormData(data: Record<string, any>, options: FormDataOptions = {}): FormData {
+export function buildFormData(data: Record<string, unknown>, options: FormDataOptions = {}): FormData {
   const {
     convertToPascalCase = false,
     skipNullish = true,
@@ -147,7 +147,7 @@ export interface RegisterFormData {
   phoneNumber: string
   gender?: number
   dateOfBirth?: Date
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export function buildRegisterFormData(data: RegisterFormData): FormData {

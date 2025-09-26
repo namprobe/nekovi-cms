@@ -139,7 +139,7 @@ async function loginExample() {
 }
 
 async function getUserProfileExample() {
-  const result: ApiResult<any> = await apiClient.get("/auth/profile")
+  const result: ApiResult<{ firstName: string; lastName: string; email: string }> = await apiClient.get("/auth/profile")
 
   if (result.isSuccess && result.data) {
     console.log("User profile:", result.data)

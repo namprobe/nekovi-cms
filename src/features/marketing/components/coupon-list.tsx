@@ -32,52 +32,26 @@ import { ROUTES } from "@/core/config/routes"
 import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye, Filter, Percent, Calendar } from "lucide-react"
 
 // Mock data - replace with actual API call
-const mockCoupons: any[] = [
+const mockCoupons: CouponListItem[] = [
   {
     id: "1",
+    name: "Anime 2024 Discount",
     code: "ANIME2024",
     description: "20% off all anime figures",
     discountType: "percentage",
     discountValue: 20,
     minOrderAmount: 50,
     maxDiscountAmount: 100,
-    usageLimit: 1000,
-    usedCount: 245,
+    validFrom: new Date("2024-01-01T00:00:00Z"),
+    validTo: new Date("2024-12-31T23:59:59Z"),
     startDate: new Date("2024-01-01T00:00:00Z"),
     endDate: new Date("2024-12-31T23:59:59Z"),
+    usageLimit: 1000,
+    usedCount: 245,
     isActive: true,
     status: 1,
   },
-  {
-    id: "2",
-    code: "WELCOME10",
-    description: "Welcome discount for new customers",
-    discountType: "fixed",
-    discountValue: 10,
-    minOrderAmount: 25,
-    maxDiscountAmount: 10,
-    usageLimit: 500,
-    usedCount: 89,
-    startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-06-30T23:59:59Z"),
-    isActive: true,
-    status: 1,
-  },
-  {
-    id: "3",
-    code: "EXPIRED50",
-    description: "Expired summer sale coupon",
-    discountType: "percentage",
-    discountValue: 50,
-    minOrderAmount: 100,
-    maxDiscountAmount: 200,
-    usageLimit: 200,
-    usedCount: 200,
-    startDate: new Date("2023-06-01T00:00:00Z"),
-    endDate: new Date("2023-08-31T23:59:59Z"),
-    isActive: false,
-    status: 0,
-  },
+  // TODO: Add more mock data matching CouponListItem interface
 ]
 
 const statusOptions = [
@@ -122,7 +96,7 @@ export function CouponList() {
     setFilteredCoupons(filtered)
   }, [coupons, searchTerm, selectedStatus])
 
-  const getStatusBadge = (coupon: any) => {
+  const getStatusBadge = (coupon: CouponListItem) => {
     const now = new Date()
     const endDate = coupon.endDate ? new Date(coupon.endDate) : null
 
@@ -130,7 +104,7 @@ export function CouponList() {
       return <Badge variant="error">Expired</Badge>
     } else if (!coupon.isActive) {
       return <Badge variant="neutral">Inactive</Badge>
-    } else if (coupon.usedCount >= coupon.usageLimit) {
+    } else if (coupon.usedCount >= (coupon.usageLimit || 0)) {
       return <Badge variant="warning">Used Up</Badge>
     } else {
       return <Badge variant="success">Active</Badge>

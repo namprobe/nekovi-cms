@@ -1,2 +1,2 @@
 export * from './types'
-export { authService } from './services'
+export { useAuthStore } from './services'

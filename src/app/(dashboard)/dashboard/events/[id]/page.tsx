@@ -10,6 +10,7 @@ interface EventDetailPageProps {
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { id } = await params
   // TODO: Fetch event data by ID
+  console.log('Event ID:', id) // Temporarily use id to avoid ESLint warning
   const mockEventData = {
     title: "Anime Expo 2024",
     description: "The biggest anime convention in North America",

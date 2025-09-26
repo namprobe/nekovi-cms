@@ -17,7 +17,13 @@ export interface Order extends BaseEntity {
   paymentStatus: PaymentStatus
   orderStatus: OrderStatus
   notes?: string
-  user?: any
+  user?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    phoneNumber?: string
+  }
   orderItems?: OrderItem[]
   payments?: Payment[]
   shippingMethods?: OrderShippingMethod[]
@@ -30,7 +36,13 @@ export interface OrderItem extends BaseEntity {
   unitPrice: number
   discountAmount: number
   order?: Order
-  product?: any
+  product?: {
+    id: string
+    name: string
+    price: number
+    discountPrice?: number
+    imagePath?: string
+  }
 }
 
 export interface Payment extends BaseEntity {

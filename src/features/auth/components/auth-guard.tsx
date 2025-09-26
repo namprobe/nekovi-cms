@@ -98,7 +98,7 @@ export function AuthGuard({
         <div className="flex items-center justify-center min-h-screen bg-background">
           <div className="text-center">
             <h2 className="text-lg font-semibold text-foreground">Access Denied</h2>
-            <p className="text-muted-foreground">You don't have permission to access this page.</p>
+            <p className="text-muted-foreground">You don&apos;t have permission to access this page.</p>
           </div>
         </div>
       )

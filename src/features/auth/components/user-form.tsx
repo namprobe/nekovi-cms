@@ -102,7 +102,7 @@ export function UserForm({ initialData, isEditing = false }: UserFormProps) {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       router.push(ROUTES.USERS)
-    } catch (err) {
+    } catch {
       setErrors({ general: "Failed to save user. Please try again." })
     } finally {
       setIsLoading(false)

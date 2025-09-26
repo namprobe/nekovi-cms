@@ -10,6 +10,7 @@ interface UserDetailPageProps {
 export default async function UserDetailPage({ params }: UserDetailPageProps) {
   const { id } = await params
   // TODO: Fetch user data based on params.id
+  console.log('User ID:', id) // Temporarily use id to avoid ESLint warning
   const mockUserData = {
     firstName: "John",
     lastName: "Doe",

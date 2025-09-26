@@ -42,7 +42,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening with your store.</p>
+          <p className="text-muted-foreground">Welcome back! Here&apos;s what&apos;s happening with your store.</p>
         </div>
 
         <OrderStats />
@@ -91,7 +91,7 @@ export default function DashboardPage() {
                 <div className="flex items-center space-x-3">
                   <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                   <div className="flex-1">
-                    <p className="text-sm">Product "Anime Figure" low stock</p>
+                    <p className="text-sm">Product &quot;Anime Figure&quot; low stock</p>
                     <p className="text-xs text-muted-foreground">10 minutes ago</p>
                   </div>
                 </div>

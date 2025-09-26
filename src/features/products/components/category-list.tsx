@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+// import { useRouter } from "next/navigation" // TODO: Will be used for navigation
 import Image from "next/image"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
@@ -81,7 +81,7 @@ const mockCategories: Category[] = [
 ]
 
 export function CategoryList() {
-  const router = useRouter()
+  // const router = useRouter() // TODO: Will be used for navigation
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")

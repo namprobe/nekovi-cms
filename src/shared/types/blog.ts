@@ -8,7 +8,12 @@ export interface BlogPost extends BaseEntity {
   publishDate: Date
   isPublished: boolean
   featuredImagePath?: string
-  author?: any
+  author?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
   category?: PostCategory
   tags?: PostTag[]
 }
@@ -23,7 +28,11 @@ export interface PostTag extends BaseEntity {
   postId: string
   tagId: string
   post?: BlogPost
-  tag?: any
+  tag?: {
+    id: string
+    name: string
+    color?: string
+  }
 }
 
 // DTOs

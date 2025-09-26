@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       setIsSubmitted(true)
-    } catch (err) {
+    } catch {
       setError("Failed to send reset email. Please try again.")
     } finally {
       setIsLoading(false)
@@ -60,11 +60,11 @@ export default function ForgotPasswordPage() {
               <Mail className="h-6 w-6 text-green-600" />
             </div>
             <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
-            <CardDescription>We've sent a password reset link to {email}</CardDescription>
+            <CardDescription>We&apos;ve sent a password reset link to {email}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground text-center">
-              Didn't receive the email? Check your spam folder or try again.
+              Didn&apos;t receive the email? Check your spam folder or try again.
             </p>
             <div className="flex flex-col space-y-2">
               <Button onClick={() => setIsSubmitted(false)} variant="outline" className="w-full">
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Forgot Password</CardTitle>
           <CardDescription className="text-center">
-            Enter your email address and we'll send you a link to reset your password
+            Enter your email address and we&apos;ll send you a link to reset your password
           </CardDescription>
         </CardHeader>
         <CardContent>

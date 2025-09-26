@@ -82,7 +82,7 @@ export enum ConditionType {
 }
 
 // API Response types
-export interface ApiResult<T = any> {
+export interface ApiResult<T = unknown> {
   isSuccess: boolean
   data?: T
   message?: string
@@ -90,7 +90,7 @@ export interface ApiResult<T = any> {
   errorCode?: string
 }
 
-export interface PaginateResult<T = any> {
+export interface PaginateResult<T = unknown> {
   isSuccess: boolean
   items: T[]
   totalItems: number

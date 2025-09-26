@@ -62,7 +62,8 @@ const mockOrderDetail: Order = {
       product: {
         id: "prod-1",
         name: "Naruto Uzumaki Figure",
-        primaryImage: "/naruto-figure.jpg",
+        price: 24.99,
+        imagePath: "/naruto-figure.jpg",
       },
     },
     {
@@ -81,7 +82,8 @@ const mockOrderDetail: Order = {
       product: {
         id: "prod-2",
         name: "Attack on Titan Poster Set",
-        primaryImage: "/attack-on-titan-inspired-poster.png",
+        price: 29.99,
+        imagePath: "/attack-on-titan-inspired-poster.png",
       },
     },
   ],
@@ -250,7 +252,7 @@ export function OrderDetail({ orderId }: OrderDetailProps) {
                   <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted">
                       <Image
-                        src={item.product?.primaryImage || "/placeholder.svg"}
+                        src={item.product?.imagePath || "/placeholder.svg"}
                         alt={item.product?.name || "Product"}
                         fill
                         className="object-cover"

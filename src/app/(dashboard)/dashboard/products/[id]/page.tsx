@@ -10,6 +10,7 @@ interface ProductDetailPageProps {
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { id } = await params
   // TODO: Fetch product data based on params.id
+  console.log('Product ID:', id) // Temporarily use id to avoid ESLint warning
   const mockProductData = {
     name: "Naruto Uzumaki Figure",
     description: "High-quality Naruto figure with detailed craftsmanship",

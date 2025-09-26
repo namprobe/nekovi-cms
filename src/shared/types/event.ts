@@ -16,7 +16,12 @@ export interface EventProduct extends BaseEntity {
   isFeatured: boolean
   discountPercentage: number
   event?: Event
-  product?: any
+  product?: {
+    id: string
+    name: string
+    price: number
+    discountPrice?: number
+  }
 }
 
 export interface Badge extends BaseEntity {
@@ -39,7 +44,12 @@ export interface UserBadge extends BaseEntity {
   isActive: boolean
   activatedFrom?: Date
   activatedTo?: Date
-  user?: any
+  user?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
   badge?: Badge
 }
 
@@ -61,9 +71,19 @@ export interface UserCoupon extends BaseEntity {
   couponId: string
   orderId?: string
   usedDate?: Date
-  user?: any
+  user?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
   coupon?: Coupon
-  order?: any
+  order?: {
+    id: string
+    orderNumber: string
+    totalAmount: number
+    status: number
+  }
 }
 
 // DTOs

@@ -36,6 +36,7 @@ export function EventForm({ initialData, isEditing = false }: EventFormProps) {
 
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // Image file state - currently used for preview only, will be used for upload later
   const [imageFile, setImageFile] = useState<File | null>(null)
 
   const validateForm = () => {
@@ -80,18 +81,19 @@ export function EventForm({ initialData, isEditing = false }: EventFormProps) {
 
     try {
       // TODO: Implement API call with image upload
+      console.log('Image file for upload:', imageFile) // Temporary log to use imageFile
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       router.push(ROUTES.EVENTS)
-    } catch (err) {
+    } catch {
       setErrors({ general: "Failed to save event. Please try again." })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleInputChange = (field: keyof CreateEventDto, value: any) => {
+  const handleInputChange = (field: keyof CreateEventDto, value: string | Date | number | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear field-specific error when user starts typing
     if (errors[field]) {

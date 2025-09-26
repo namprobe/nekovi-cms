@@ -53,7 +53,7 @@ export function BlogPostForm({ initialData, isEditing = false }: BlogPostFormPro
 
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null) // Used for image upload
   const [previewMode, setPreviewMode] = useState(false)
 
   const validateForm = () => {
@@ -86,6 +86,7 @@ export function BlogPostForm({ initialData, isEditing = false }: BlogPostFormPro
 
     try {
       // TODO: Implement API call with image upload
+      console.log('Image file for upload:', imageFile) // Temporary log to use imageFile
       // const formDataWithImage = new FormData();
       // Object.entries(formData).forEach(([key, value]) => {
       //   if (value !== undefined) {
@@ -108,14 +109,14 @@ export function BlogPostForm({ initialData, isEditing = false }: BlogPostFormPro
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       router.push(ROUTES.BLOG_POSTS)
-    } catch (err) {
+    } catch {
       setErrors({ general: "Failed to save blog post. Please try again." })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleInputChange = (field: keyof CreateBlogPostDto, value: any) => {
+  const handleInputChange = (field: keyof CreateBlogPostDto, value: string | Date | string[] | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear field-specific error when user starts typing
     if (errors[field]) {

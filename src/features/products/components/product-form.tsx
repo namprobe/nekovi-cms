@@ -126,14 +126,14 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       router.push(ROUTES.PRODUCTS)
-    } catch (err) {
+    } catch {
       setErrors({ general: "Failed to save product. Please try again." })
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleInputChange = (field: keyof CreateProductDto, value: any) => {
+  const handleInputChange = (field: keyof CreateProductDto, value: string | number | string[] | boolean | Date) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear field-specific error when user starts typing
     if (errors[field]) {
@@ -230,7 +230,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                       min="0"
                       value={formData.discountPrice || ""}
                       onChange={(e) =>
-                        handleInputChange("discountPrice", Number.parseFloat(e.target.value) || undefined)
+                        handleInputChange("discountPrice", Number.parseFloat(e.target.value) || 0)
                       }
                       disabled={isLoading}
                     />
