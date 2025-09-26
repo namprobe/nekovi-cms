@@ -1,6 +1,11 @@
+// Helper function to normalize URL by removing trailing slash
+function normalizeUrl(url: string): string {
+    return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
 export const env = {
     //API Configuration
-    BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5240",
+    BASE_URL: normalizeUrl(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5240"),
     CMS_PREFIX: process.env.NEXT_PUBLIC_CMS_PREFIX || "/api/cms",
     COMMON_PREFIX: process.env.NEXT_PUBLIC_COMMON_PREFIX || "/api/common",
 

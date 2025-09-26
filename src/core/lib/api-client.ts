@@ -87,6 +87,11 @@ class ApiClient {
     //Gom phần còn lại (method, headers...) vào một object riêng (fetchOptions).
     const { timeout = 30000, retries = 1, ...fetchOptions } = options
     const url = `${this.baseURL}${endpoint}`
+    
+    // Debug log for URL construction (remove in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔗 API Request:', { baseURL: this.baseURL, endpoint, finalURL: url })
+    }
     // Tạo controller để quản lý việc hủy request
     const controller = new AbortController()
 
