@@ -27,8 +27,10 @@ export function Topbar() {
     router.push(ROUTES.LOGIN)
   }
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+  const getInitials = (firstName?: string, lastName?: string) => {
+    const firstInitial = firstName && firstName.length > 0 ? firstName.charAt(0) : 'U'
+    const lastInitial = lastName && lastName.length > 0 ? lastName.charAt(0) : 'U'
+    return `${firstInitial}${lastInitial}`.toUpperCase()
   }
 
   return (
@@ -57,7 +59,7 @@ export function Topbar() {
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user?.avatarPath || "/placeholder.svg"} alt={user?.firstName} />
                 <AvatarFallback className="bg-blue-500 text-white">
-                  {user ? getInitials(user.firstName, user.lastName) : "U"}
+                  {user ? getInitials(user.firstName, user.lastName) : "UU"}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -66,7 +68,7 @@ export function Topbar() {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {user ? `${user.firstName} ${user.lastName}` : "User"}
+                  {user ? `${user.firstName || 'Unknown'} ${user.lastName || 'User'}` : "User"}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
               </div>

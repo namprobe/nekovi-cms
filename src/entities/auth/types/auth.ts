@@ -14,10 +14,10 @@ export interface AuthResponse {
 
 export interface ProfileResponse {
     email: string
-    firstName: string
-    lastName: string
-    phoneNumber: string
-    gender: string
+    firstName?: string
+    lastName?: string
+    phoneNumber?: string
+    gender?: string
     dateOfBirth?: Date
     bio?: string
     avatarPath?: string
