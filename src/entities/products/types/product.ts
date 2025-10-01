@@ -116,7 +116,11 @@ export interface ProductListItem {
   price: number
   discountPrice?: number
   stockQuantity: number
-  categoryName: string
+  category: {
+    name: string
+    parentCategoryId?: string
+    imagePath?: string
+  } // Thay categoryName thành category
   animeSeriesTitle?: string
   primaryImage?: string
   status: number

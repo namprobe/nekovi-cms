@@ -29,12 +29,16 @@ export const env = {
     ENDPOINTS: {
         AUTH: {
             LOGIN: "/auth/login",
-            LOGOUT: "/auth/logout", 
+            LOGOUT: "/auth/logout",
             PROFILE: "/auth/profile",
             REFRESH_TOKEN: "/auth/refresh-token",
+        },
+        PRODUCT: {
+            LIST: `${process.env.CMS_PREFIX}/products`,
+            DETAIL: (id: string) => `${env.CMS_PREFIX}/products/${id}`,
         }
     }
-} as const; 
+} as const;
 
 // Validation function to ensure required env vars are present
 export function validateEnv() {

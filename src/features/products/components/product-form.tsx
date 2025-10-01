@@ -16,9 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { CreateProductDto } from "@/entities/products/types/product"
 import { ROUTES } from "@/core/config/routes"
 import { Loader2, Save, X, Upload, Trash2 } from "lucide-react"
+import { productService } from "@/entities/products/services/product"
 
 interface ProductFormProps {
-  initialData?: Partial<CreateProductDto>
+  initialData?: Partial<CreateProductDto> & { id?: string }
   isEditing?: boolean
 }
 
@@ -97,41 +98,60 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     return Object.keys(newErrors).length === 0
   }
 
+  // inside your product-form component (handleSubmit)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
-
     setIsLoading(true)
+    setErrors({})
 
     try {
-      // TODO: Implement API call with image upload
-      // const formDataWithImages = new FormData();
-      // Object.entries(formData).forEach(([key, value]) => {
-      //   if (value !== undefined) {
-      //     formDataWithImages.append(key, value.toString());
-      //   }
-      // });
-      // imageFiles.forEach((file, index) => {
-      //   formDataWithImages.append(`images[${index}]`, file);
-      // });
+      const form = new FormData()
+      form.append("name", formData.name)
+      form.append("description", formData.description || "")
+      form.append("price", String(formData.price))
+      form.append("discountPrice", formData.discountPrice ? String(formData.discountPrice) : "")
+      form.append("stockQuantity", String(formData.stockQuantity))
+      form.append("categoryId", formData.categoryId)
+      form.append("isPreOrder", formData.isPreOrder ? "true" : "false")
+      if (formData.preOrderReleaseDate) {
+        // backend nhận kiểu DateTime string
+        form.append("preOrderReleaseDate", new Date(formData.preOrderReleaseDate).toISOString())
+      }
 
-      // const response = isEditing
-      //   ? await apiClient.put(`/products/${productId}`, formDataWithImages)
-      //   : await apiClient.post('/products', formDataWithImages);
+      // tags: 2 cách (backend binding có thể nhận multiple fields with same name)
+      // 1) append each tagId with same name 'tagIds'
+      formData.tagIds?.forEach(tagId => form.append("tagIds", tagId))
+      // hoặc 2) JSON string (nếu backend xử lý JSON string)
+      // form.append("tagIdsJson", JSON.stringify(formData.tagIds))
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // images: append files (tên field tuỳ backend; thử dùng 'images' hoặc 'imageFiles' - backend ProductRequest thường định nghĩa property list)
+      if (imageFiles && imageFiles.length) {
+        imageFiles.forEach(file => {
+          form.append("images", file) // nếu backend property tên "images"
+        })
+      }
 
-      router.push(ROUTES.PRODUCTS)
-    } catch {
-      setErrors({ general: "Failed to save product. Please try again." })
+      // CALL API
+      let res
+      if (isEditing && initialData?.id) {
+        res = await productService.updateProductForm(initialData.id, form)
+      } else {
+        res = await productService.createProductForm(form)
+      }
+
+      if (res.isSuccess) {
+        // thành công — refresh list hoặc redirect
+        router.push("/dashboard/products")
+      } else {
+        setErrors({ general: res.message || "Failed" })
+      }
+    } catch (err: any) {
+      setErrors({ general: err?.message || "Unexpected error" })
     } finally {
       setIsLoading(false)
     }
   }
+
 
   const handleInputChange = (field: keyof CreateProductDto, value: string | number | string[] | boolean | Date) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
