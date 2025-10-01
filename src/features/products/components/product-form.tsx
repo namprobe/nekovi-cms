@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/shared/ui/button"
@@ -12,40 +10,20 @@ import { Textarea } from "@/shared/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Checkbox } from "@/shared/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import type { CreateProductDto } from "@/entities/products/types/product"
 import { ROUTES } from "@/core/config/routes"
 import { Loader2, Save, X, Upload, Trash2 } from "lucide-react"
 import { productService } from "@/entities/products/services/product"
+import { AsyncSelect } from "@/shared/ui/selects/async-select"
+import { useCategorySelectStore } from "@/entities/categories/services/category-select-service"
+import { useAnimeSeriesSelectStore } from "@/entities/anime-series/services/anime-series-select-service"
+import { AsyncMultiSelect } from "@/shared/ui/selects/async-multi-select"
+import { useTagSelectStore } from "@/entities/tags/services/tag-select-service"
 
 interface ProductFormProps {
   initialData?: Partial<CreateProductDto> & { id?: string }
   isEditing?: boolean
 }
-
-const mockCategories = [
-  { id: "1", name: "Figures" },
-  { id: "2", name: "Nendoroids" },
-  { id: "3", name: "Statues" },
-  { id: "4", name: "Posters" },
-  { id: "5", name: "Keychains" },
-]
-
-const mockAnimeSeries = [
-  { id: "1", title: "Naruto" },
-  { id: "2", title: "One Piece" },
-  { id: "3", title: "Attack on Titan" },
-  { id: "4", title: "Dragon Ball Z" },
-  { id: "5", title: "My Hero Academia" },
-]
-
-const mockTags = [
-  { id: "1", name: "Popular" },
-  { id: "2", name: "Limited Edition" },
-  { id: "3", name: "New Release" },
-  { id: "4", name: "Best Seller" },
-  { id: "5", name: "Collectible" },
-]
 
 export function ProductForm({ initialData, isEditing = false }: ProductFormProps) {
   const router = useRouter()
@@ -67,40 +45,60 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imageFiles, setImageFiles] = useState<File[]>([])
 
+  // Initialize useTagSelectStore within the component
+  const { fetchOptions: fetchTags } = useTagSelectStore()
+
+  const memoizedFetchTags = useCallback(
+    async (search: string) => {
+      const res = await fetchTags(search)
+      return res.map((item) => ({ id: item.id, label: item.name }))
+    },
+    [fetchTags]
+  )
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Product name is required"
-    }
-
-    if (!formData.categoryId) {
-      newErrors.categoryId = "Category is required"
-    }
-
-    if (formData.price <= 0) {
-      newErrors.price = "Price must be greater than 0"
-    }
-
-    if (formData.discountPrice && formData.discountPrice >= formData.price) {
+    if (!formData.name.trim()) newErrors.name = "Product name is required"
+    if (!formData.categoryId) newErrors.categoryId = "Category is required"
+    if (formData.price <= 0) newErrors.price = "Price must be greater than 0"
+    if (formData.discountPrice && formData.discountPrice >= formData.price)
       newErrors.discountPrice = "Discount price must be less than regular price"
-    }
-
-    if (formData.stockQuantity < 0) {
-      newErrors.stockQuantity = "Stock quantity cannot be negative"
-    }
-
-    if (formData.isPreOrder && !formData.preOrderReleaseDate) {
+    if (formData.stockQuantity < 0) newErrors.stockQuantity = "Stock quantity cannot be negative"
+    if (formData.isPreOrder && !formData.preOrderReleaseDate)
       newErrors.preOrderReleaseDate = "Pre-order release date is required"
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  // inside your product-form component (handleSubmit)
+  const { fetchOptions: fetchCategories } = useCategorySelectStore()
+  const { fetchOptions: fetchAnimeSeries } = useAnimeSeriesSelectStore()
+
+  const memoizedFetchCategories = useCallback(
+    async (search: string) => {
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Fetching categories with search: "${search}"`)
+      }
+      const res = await fetchCategories(search)
+      return res.map((item) => ({ id: item.id, label: item.name }))
+    },
+    [fetchCategories]
+  )
+
+  const memoizedFetchAnimeSeries = useCallback(
+    async (search: string) => {
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Fetching anime series with search: "${search}"`)
+      }
+      const res = await fetchAnimeSeries(search)
+      return res.map((item) => ({ id: item.id, label: item.title }))
+    },
+    [fetchAnimeSeries]
+  )
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateForm()) return
+
     setIsLoading(true)
     setErrors({})
 
@@ -114,24 +112,11 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
       form.append("categoryId", formData.categoryId)
       form.append("isPreOrder", formData.isPreOrder ? "true" : "false")
       if (formData.preOrderReleaseDate) {
-        // backend nhận kiểu DateTime string
         form.append("preOrderReleaseDate", new Date(formData.preOrderReleaseDate).toISOString())
       }
+      formData.tagIds.forEach((tagId) => form.append("tagIds", tagId))
+      imageFiles.forEach((file) => form.append("imageFiles", file))
 
-      // tags: 2 cách (backend binding có thể nhận multiple fields with same name)
-      // 1) append each tagId with same name 'tagIds'
-      formData.tagIds?.forEach(tagId => form.append("tagIds", tagId))
-      // hoặc 2) JSON string (nếu backend xử lý JSON string)
-      // form.append("tagIdsJson", JSON.stringify(formData.tagIds))
-
-      // images: append files (tên field tuỳ backend; thử dùng 'images' hoặc 'imageFiles' - backend ProductRequest thường định nghĩa property list)
-      if (imageFiles && imageFiles.length) {
-        imageFiles.forEach(file => {
-          form.append("images", file) // nếu backend property tên "images"
-        })
-      }
-
-      // CALL API
       let res
       if (isEditing && initialData?.id) {
         res = await productService.updateProductForm(initialData.id, form)
@@ -140,52 +125,58 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
       }
 
       if (res.isSuccess) {
-        // thành công — refresh list hoặc redirect
-        router.push("/dashboard/products")
+        router.push(ROUTES.PRODUCTS)
       } else {
-        setErrors({ general: res.message || "Failed" })
+        setErrors({ general: res.message || "Failed to save product" })
       }
     } catch (err: any) {
-      setErrors({ general: err?.message || "Unexpected error" })
+      setErrors({ general: err?.message || "An unexpected error occurred" })
     } finally {
       setIsLoading(false)
     }
   }
 
-
-  const handleInputChange = (field: keyof CreateProductDto, value: string | number | string[] | boolean | Date) => {
+  const handleInputChange = (
+    field: keyof CreateProductDto,
+    value: string | number | string[] | boolean | Date
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear field-specific error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }))
-    }
-    if (errors.general) {
-      setErrors((prev) => ({ ...prev, general: "" }))
-    }
-  }
-
-  const handleTagChange = (tagId: string, checked: boolean) => {
-    const newTagIds = checked ? [...formData.tagIds, tagId] : formData.tagIds.filter((id) => id !== tagId)
-
-    handleInputChange("tagIds", newTagIds)
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }))
+    if (errors.general) setErrors((prev) => ({ ...prev, general: "" }))
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
+    if (imageFiles.length + files.length > 5) {
+      setErrors({ images: "Cannot upload more than 5 images" })
+      return
+    }
     setImageFiles((prev) => [...prev, ...files])
-
-    // Create preview URLs
     const newImageUrls = files.map((file) => URL.createObjectURL(file))
     handleInputChange("images", [...formData.images, ...newImageUrls])
   }
 
   const removeImage = (index: number) => {
+    const imageToRemove = formData.images[index]
+    if (imageToRemove.startsWith("blob:")) {
+      URL.revokeObjectURL(imageToRemove)
+    }
     const newImages = formData.images.filter((_, i) => i !== index)
     const newFiles = imageFiles.filter((_, i) => i !== index)
-
     handleInputChange("images", newImages)
     setImageFiles(newFiles)
   }
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      formData.images.forEach((image) => {
+        if (image.startsWith("blob:")) {
+          URL.revokeObjectURL(image)
+        }
+      })
+    }
+  }, [formData.images])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -200,6 +191,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                 <AlertDescription>{errors.general}</AlertDescription>
               </Alert>
             )}
+            {errors.images && <p className="text-sm text-red-600">{errors.images}</p>}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
@@ -240,7 +232,6 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                     />
                     {errors.price && <p className="text-sm text-red-600">{errors.price}</p>}
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="discountPrice">Discount Price</Label>
                     <Input
@@ -275,43 +266,23 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="categoryId">Category *</Label>
-                  <Select
+                  <AsyncSelect
                     value={formData.categoryId}
-                    onValueChange={(value) => handleInputChange("categoryId", value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(val) => handleInputChange("categoryId", val)}
+                    fetchOptions={memoizedFetchCategories}
+                    placeholder="Select Category..."
+                  />
                   {errors.categoryId && <p className="text-sm text-red-600">{errors.categoryId}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="animeSeriesId">Anime Series</Label>
-                  <Select
-                    value={formData.animeSeriesId}
-                    onValueChange={(value) => handleInputChange("animeSeriesId", value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an anime series" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockAnimeSeries.map((series) => (
-                        <SelectItem key={series.id} value={series.id}>
-                          {series.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <AsyncSelect
+                    value={formData.animeSeriesId ?? ""}
+                    onChange={(val) => handleInputChange("animeSeriesId", val)}
+                    fetchOptions={memoizedFetchAnimeSeries}
+                    placeholder="Select Anime Series..."
+                  />
                 </div>
 
                 <div className="space-y-3">
@@ -345,42 +316,33 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <Label>Tags</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {mockTags.map((tag) => (
-                    <div key={tag.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={tag.id}
-                        checked={formData.tagIds.includes(tag.id)}
-                        onCheckedChange={(checked) => handleTagChange(tag.id, checked as boolean)}
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor={tag.id} className="text-sm font-normal">
-                        {tag.name}
-                      </Label>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <Label htmlFor="tagIds" className="text-[hsl(var(--foreground))]">
+                    Tags
+                  </Label>
+                  <AsyncMultiSelect
+                    value={formData.tagIds}
+                    onChange={(val) => handleInputChange("tagIds", val)}
+                    fetchOptions={memoizedFetchTags}
+                    placeholder="Select Tags..."
+                    className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))] border-[hsl(var(--border))]"
+                    tagClassName="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] border-[hsl(var(--border))]"
+                  />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label>Product Images</Label>
-                <div className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <Label>Product Images</Label>
                   <div className="flex items-center space-x-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById("image-upload")?.click()}
-                      disabled={isLoading}
+                    <label
+                      htmlFor="image-upload"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       Upload Images
-                    </Button>
+                    </label>
                     <input
                       id="image-upload"
                       type="file"
@@ -391,7 +353,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                       disabled={isLoading}
                     />
                     <p className="text-sm text-muted-foreground">
-                      Upload up to 5 images. First image will be the primary image.
+                      Upload up to 5 images. The first image will be the primary image.
                     </p>
                   </div>
 
@@ -428,26 +390,26 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-end space-x-4 pt-6">
-              <Button type="button" variant="outline" onClick={() => router.push(ROUTES.PRODUCTS)} disabled={isLoading}>
-                <X className="mr-2 h-4 w-4" />
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    {isEditing ? "Update Product" : "Create Product"}
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center justify-end space-x-4 pt-6">
+                <Button type="button" variant="outline" onClick={() => router.push(ROUTES.PRODUCTS)} disabled={isLoading}>
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      {isEditing ? "Update Product" : "Create Product"}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </form>
         </CardContent>
