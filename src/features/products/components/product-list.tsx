@@ -13,6 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Plus, MoreHorizontal, Eye, Edit, Trash2, Search, Filter } from "lucide-react"
 import { ROUTES } from "@/core/config/routes"
 import { STATUS_VARIANTS } from "@/core/config/constants"
+import { productService } from "@/entities/products/services/product"
+import { useToast } from "@/hooks/use-toast"
+
 
 export default function ProductList() {
   const router = useRouter()
@@ -39,6 +42,29 @@ export default function ProductList() {
     }
     setFilteredProducts(filtered)
   }, [items, searchTerm, selectedCategory])
+
+  // Thêm hàm handleDelete
+  const { toast } = useToast()
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return
+    try {
+      await productService.deleteProduct(id)
+      toast({
+        title: "Deleted successfully",
+        description: "The product has been removed from the list.",
+      })
+      refresh()
+    } catch (err) {
+      console.error("Delete product failed:", err)
+      toast({
+        title: "Delete failed",
+        description: "Something went wrong while deleting the product.",
+        variant: "destructive",
+      })
+    }
+  }
+
 
   const getStatusBadge = (status: number) => {
     const statusText = status === 1 ? "Active" : status === 0 ? "Inactive" : "Pending"
@@ -138,7 +164,7 @@ export default function ProductList() {
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(product.id)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
