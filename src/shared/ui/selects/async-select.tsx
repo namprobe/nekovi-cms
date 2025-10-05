@@ -1,3 +1,4 @@
+// src/shared/ui/selects/async-select.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -51,17 +52,18 @@ export function AsyncSelect({ value, onChange, fetchOptions, placeholder, disabl
         [options, loadOptions]
     );
 
+    // Thêm: Preload nếu có value nhưng options chưa có item tương ứng (khi edit)
+    useEffect(() => {
+        if (value && !options.find((opt) => opt.id === value)) {
+            loadOptions(""); // Load với search rỗng để lấy full list hoặc matched
+        }
+    }, [value, options, loadOptions]);
+
     useEffect(() => {
         if (isOpen && search.length >= 1) {
             loadOptions(search);
         }
     }, [search, isOpen, loadOptions]);
-
-    useEffect(() => {
-        if (isOpen && value && !options.find((opt) => opt.id === value)) {
-            loadOptions("");
-        }
-    }, [value, options, isOpen, loadOptions]);
 
     useEffect(() => {
         if (isOpen && inputRef.current) {
@@ -83,7 +85,7 @@ export function AsyncSelect({ value, onChange, fetchOptions, placeholder, disabl
     };
 
     return (
-        <Select value={value} onValueChange={onChange} onOpenChange={handleOpenChange}>
+        <Select value={value} onValueChange={onChange} onOpenChange={handleOpenChange} disabled={disabled}>
             <SelectTrigger>
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
@@ -116,6 +118,5 @@ export function AsyncSelect({ value, onChange, fetchOptions, placeholder, disabl
                 </div>
             </SelectContent>
         </Select>
-
     );
 }

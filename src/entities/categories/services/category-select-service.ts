@@ -1,3 +1,4 @@
+// src/entities/categories/services/category-select-service.ts
 import { create } from "zustand"
 import { devtools } from "zustand/middleware"
 import { apiClient } from "@/core/lib/api-client"
@@ -13,6 +14,7 @@ interface CategorySelectState {
     isLoading: boolean
     error: string | null
     fetchOptions: (search?: string) => Promise<CategorySelectItem[]>
+    setOptions: (options: CategorySelectItem[]) => void // Added
     clearError: () => void
 }
 
@@ -26,10 +28,10 @@ export const useCategorySelectStore = create<CategorySelectState>()(
             try {
                 set({ isLoading: true, error: null })
                 const endpoint = `${env.ENDPOINTS.CATEGORY.SELECT_LIST}${search ? `?search=${encodeURIComponent(search)}` : ""}`
-                const url = `${endpoint}` // Thêm BASE_URL và CMS_PREFIX
-                console.log(`Category Fetch URL: ${url}`) // Debug URL
+                const url = `${endpoint}`
+                console.log(`Category Fetch URL: ${url}`)
                 const res = await apiClient.get<CategorySelectItem[]>(url)
-                console.log(`Category Response:`, res) // Debug response từ API
+                console.log(`Category Response:`, res)
                 if (res.isSuccess && res.data) {
                     set({ options: res.data, isLoading: false })
                     return res.data
@@ -42,6 +44,8 @@ export const useCategorySelectStore = create<CategorySelectState>()(
                 return []
             }
         },
+
+        setOptions: (options) => set({ options }), // Added
 
         clearError: () => set({ error: null }),
     }))

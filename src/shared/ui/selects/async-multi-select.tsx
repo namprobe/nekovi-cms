@@ -1,69 +1,95 @@
-"use client"
+// src/shared/ui/selects/async-multi-select.tsx
+"use client";
 
-import * as React from "react"
-import AsyncSelect from "react-select/async"
-import { MultiValue, ActionMeta } from "react-select"
+import * as React from "react";
+import AsyncSelect from "react-select/async";
+import { MultiValue, ActionMeta } from "react-select";
 
 interface AsyncMultiSelectProps {
-    value: string[]
-    onChange: (val: string[]) => void
-    fetchOptions: (search: string) => Promise<{ id: string; label: string }[]>
-    placeholder?: string
-    className?: string
-    tagClassName?: string
+    value: string[];
+    onChange: (val: string[]) => void;
+    fetchOptions: (search: string) => Promise<{ id: string; label: string }[]>;
+    initialOptions?: { id: string; label: string }[]; // Thêm prop để preload tags
+    placeholder?: string;
+    className?: string;
+    tagClassName?: string;
+    disabled?: boolean;
 }
 
-// Define type for option
-type SelectOption = { value: string; label: string }
+type SelectOption = { value: string; label: string };
 
 export function AsyncMultiSelect({
     value,
     onChange,
     fetchOptions,
+    initialOptions = [], // Mặc định là mảng rỗng
     placeholder = "Select...",
     className = "",
     tagClassName = "",
+    disabled = false,
 }: AsyncMultiSelectProps) {
-    const [loading, setLoading] = React.useState(false)
-    const [cachedOptions, setCachedOptions] = React.useState<{ id: string; label: string }[]>([])
+    const [loading, setLoading] = React.useState(false);
+    const [cachedOptions, setCachedOptions] = React.useState<{ id: string; label: string }[]>(initialOptions);
+
+    // Preload initialOptions vào cachedOptions khi component mount
+    React.useEffect(() => {
+        console.log("AsyncMultiSelect - Preloading for value:", value); // Debug
+        console.log("AsyncMultiSelect - Current cachedOptions:", cachedOptions);
+        if (value.length > 0 && value.some((id) => !cachedOptions.find((o) => o.id === id))) {
+            console.log("AsyncMultiSelect - Triggering loadOptions('')");
+            loadOptions("");
+        }
+    }, [value, cachedOptions]);
+
 
     const loadOptions = async (inputValue: string): Promise<SelectOption[]> => {
-        setLoading(true)
+        setLoading(true);
         try {
-            const opts = await fetchOptions(inputValue)
-            // Update cache with unique options
+            const opts = await fetchOptions(inputValue);
             setCachedOptions((prev) => {
-                const newOptions = opts.filter((opt) => !prev.some((p) => p.id === opt.id))
-                return [...prev, ...newOptions]
-            })
-            return opts.map((o) => ({ value: o.id, label: o.label }))
+                const newOptions = opts.filter((opt) => !prev.some((p) => p.id === opt.id));
+                return [...prev, ...newOptions];
+            });
+            return opts.map((o) => ({ value: o.id, label: o.label }));
         } catch (error) {
-            console.error("Failed to load options:", error)
-            return []
+            console.error("Failed to load options:", error);
+            return [];
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
+
+    /// Gộp hai useEffect để preload options
+
+    React.useEffect(() => {
+
+        if (value.length > 0 && value.some((id) => !cachedOptions.find((o) => o.id === id))) {
+            loadOptions("");
+        }
+
+    }, [value]);
+
 
     const selectedOptions = value.map((id) => {
-        const option = cachedOptions.find((o) => o.id === id)
+        const option = cachedOptions.find((o) => o.id === id);
         return {
             value: id,
-            label: option?.label || id, // Use cached label or fallback to ID
-        }
-    })
+            label: option?.label || id, // Fallback nếu chưa load
+        };
+    });
 
     return (
         <AsyncSelect
             isMulti
             isLoading={loading}
+            isDisabled={disabled}
             placeholder={placeholder}
             value={selectedOptions}
             onChange={(newValue: MultiValue<SelectOption>, actionMeta: ActionMeta<SelectOption>) => {
-                onChange(newValue.map((s) => s.value))
+                onChange(newValue.map((s) => s.value));
             }}
             loadOptions={loadOptions}
-            defaultOptions // Trigger loadOptions with empty input on first click
+            defaultOptions={true} // Trigger loadOptions("") khi mở lần đầu
             className={className}
             styles={{
                 control: (base) => ({
@@ -114,5 +140,5 @@ export function AsyncMultiSelect({
             }}
             aria-label="Select multiple tags"
         />
-    )
+    );
 }

@@ -1,3 +1,4 @@
+// src/entities/anime-series/services/anime-series-select-service.ts
 import { create } from "zustand"
 import { devtools } from "zustand/middleware"
 import { apiClient } from "@/core/lib/api-client"
@@ -13,6 +14,7 @@ interface AnimeSeriesSelectState {
     isLoading: boolean
     error: string | null
     fetchOptions: (search?: string) => Promise<AnimeSeriesSelectItem[]>
+    setOptions: (options: AnimeSeriesSelectItem[]) => void // Added
     clearError: () => void
 }
 
@@ -26,10 +28,10 @@ export const useAnimeSeriesSelectStore = create<AnimeSeriesSelectState>()(
             try {
                 set({ isLoading: true, error: null })
                 const endpoint = `${env.ENDPOINTS.ANIME.SELECT_LIST}${search ? `?search=${encodeURIComponent(search)}` : ""}`
-                const url = `${endpoint}` // Thêm BASE_URL và CMS_PREFIX
-                console.log(`Anime Fetch URL: ${url}`) // Debug URL
+                const url = `${endpoint}`
+                console.log(`Anime Fetch URL: ${url}`)
                 const res = await apiClient.get<AnimeSeriesSelectItem[]>(url)
-                console.log(`Anime Response:`, res) // Debug response từ API
+                console.log(`Anime Response:`, res)
                 if (res.isSuccess && res.data) {
                     set({ options: res.data, isLoading: false })
                     return res.data
@@ -42,6 +44,8 @@ export const useAnimeSeriesSelectStore = create<AnimeSeriesSelectState>()(
                 return []
             }
         },
+
+        setOptions: (options) => set({ options }), // Added
 
         clearError: () => set({ error: null }),
     }))

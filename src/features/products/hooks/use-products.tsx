@@ -2,7 +2,7 @@
 "use client"
 import { useEffect, useState, useCallback } from "react"
 import { productService } from "@/entities/products/services/product"
-import type { ProductListItem, Product } from "@/entities/products/types/product"
+import type { ProductListItem, Product, CreateProductDto } from "@/entities/products/types/product"
 
 export function useProducts(paramsInit = { page: 1, limit: 10, search: "" }) {
     const [items, setItems] = useState<ProductListItem[]>([])

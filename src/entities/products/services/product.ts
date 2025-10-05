@@ -18,8 +18,11 @@ import type { PaginateResult, ApiResult } from "@/shared/types/common"
 
 export const productService = {
     // Paginated list (params: page, limit, search, categoryId, sortBy, sortOrder...)
-    getProducts: (params?: Record<string, any>) =>
-        apiClient.paginate<ProductListItem>("/products", params),
+    // getProducts: (params?: Record<string, any>) =>
+    //     apiClient.paginate<ProductListItem>("/products", params),
+    async getProducts(params: { page?: number; limit?: number; search?: string }) {
+        return apiClient.paginate<ProductListItem[]>("/products", params)
+    },
 
     // Detail (returns ApiResult<Product>)
     getProductById: (id: string) =>

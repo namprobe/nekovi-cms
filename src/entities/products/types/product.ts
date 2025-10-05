@@ -1,3 +1,4 @@
+// src/entities/products/types/product.ts
 import type { BaseEntity } from "@/shared/types/common"
 
 export interface Product extends BaseEntity {
@@ -16,6 +17,9 @@ export interface Product extends BaseEntity {
   tags?: ProductTag[]
   inventory?: ProductInventory
   reviews?: ProductReview[]
+  totalSales?: number // Thêm từ ProductResponse
+  averageRating?: number // Thêm từ ProductResponse
+  status: number // Thêm từ ProductResponse (EntityStatusEnum)
 }
 
 export interface Category extends BaseEntity {
@@ -96,6 +100,7 @@ export interface CreateProductDto {
   preOrderReleaseDate?: Date
   images: string[]
   tagIds: string[]
+  status?: number // Thêm để hỗ trợ EntityStatusEnum
 }
 
 export interface UpdateProductDto {
@@ -108,6 +113,9 @@ export interface UpdateProductDto {
   animeSeriesId?: string
   isPreOrder?: boolean
   preOrderReleaseDate?: Date
+  images?: string[]
+  tagIds?: string[]
+  status?: number // Thêm để hỗ trợ EntityStatusEnum
 }
 
 export interface ProductListItem {
@@ -120,7 +128,7 @@ export interface ProductListItem {
     name: string
     parentCategoryId?: string
     imagePath?: string
-  } // Thay categoryName thành category
+  }
   animeSeriesTitle?: string
   primaryImage?: string
   status: number

@@ -1,3 +1,4 @@
+// src/features/products/components/product-form.tsx
 "use client"
 
 import React, { useState, useCallback, useEffect } from "react"
@@ -39,39 +40,45 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     preOrderReleaseDate: initialData?.preOrderReleaseDate || undefined,
     images: initialData?.images || [],
     tagIds: initialData?.tagIds || [],
+    status: initialData?.status || 1,
   })
 
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [imageFiles, setImageFiles] = useState<File[]>([])
 
-  // Initialize useTagSelectStore within the component
-  const { fetchOptions: fetchTags } = useTagSelectStore()
+  const { fetchOptions: fetchCategories, setOptions: setCategoryOptions } = useCategorySelectStore()
+  const { fetchOptions: fetchAnimeSeries, setOptions: setAnimeSeriesOptions } = useAnimeSeriesSelectStore()
+  const { fetchOptions: fetchTags, setOptions: setTagOptions } = useTagSelectStore()
 
-  const memoizedFetchTags = useCallback(
-    async (search: string) => {
-      const res = await fetchTags(search)
-      return res.map((item) => ({ id: item.id, label: item.name }))
-    },
-    [fetchTags]
-  )
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.name.trim()) newErrors.name = "Product name is required"
-    if (!formData.categoryId) newErrors.categoryId = "Category is required"
-    if (formData.price <= 0) newErrors.price = "Price must be greater than 0"
-    if (formData.discountPrice && formData.discountPrice >= formData.price)
-      newErrors.discountPrice = "Discount price must be less than regular price"
-    if (formData.stockQuantity < 0) newErrors.stockQuantity = "Stock quantity cannot be negative"
-    if (formData.isPreOrder && !formData.preOrderReleaseDate)
-      newErrors.preOrderReleaseDate = "Pre-order release date is required"
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const { fetchOptions: fetchCategories } = useCategorySelectStore()
-  const { fetchOptions: fetchAnimeSeries } = useAnimeSeriesSelectStore()
+  useEffect(() => {
+    const loadInitialOptions = async () => {
+      try {
+        if (formData.categoryId) {
+          const categories = await fetchCategories(formData.categoryId)
+          if (categories.length > 0) {
+            setCategoryOptions(categories)
+          }
+        }
+        if (formData.animeSeriesId) {
+          const series = await fetchAnimeSeries(formData.animeSeriesId)
+          if (series.length > 0) {
+            setAnimeSeriesOptions(series)
+          }
+        }
+        if (formData.tagIds.length > 0) {
+          const tagQuery = formData.tagIds.join(",")
+          const tags = await fetchTags(tagQuery)
+          if (tags.length > 0) {
+            setTagOptions(tags)
+          }
+        }
+      } catch (err) {
+        console.error("Error loading initial select options:", err)
+      }
+    }
+    loadInitialOptions()
+  }, [formData.categoryId, formData.animeSeriesId, formData.tagIds, fetchCategories, fetchAnimeSeries, fetchTags, setCategoryOptions, setAnimeSeriesOptions, setTagOptions])
 
   const memoizedFetchCategories = useCallback(
     async (search: string) => {
@@ -95,6 +102,30 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     [fetchAnimeSeries]
   )
 
+  const memoizedFetchTags = useCallback(
+    async (search: string) => {
+      const res = await fetchTags(search)
+      return res.map((item) => ({ id: item.id, label: item.name }))
+    },
+    [fetchTags]
+  )
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+    if (!formData.name.trim()) newErrors.name = "Product name is required"
+    if (!formData.categoryId) newErrors.categoryId = "Category is required"
+    if (formData.price <= 0) newErrors.price = "Price must be greater than 0"
+    if (formData.discountPrice && formData.discountPrice >= formData.price)
+      newErrors.discountPrice = "Discount price must be less than regular price"
+    if (formData.stockQuantity < 0) newErrors.stockQuantity = "Stock quantity cannot be negative"
+    if (formData.isPreOrder && !formData.preOrderReleaseDate)
+      newErrors.preOrderReleaseDate = "Pre-order release date is required"
+    if (!isEditing && (formData.images.length === 0 && imageFiles.length === 0))
+      newErrors.images = "At least one product image is required for new products"
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
@@ -110,12 +141,14 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
       form.append("discountPrice", formData.discountPrice ? String(formData.discountPrice) : "")
       form.append("stockQuantity", String(formData.stockQuantity))
       form.append("categoryId", formData.categoryId)
+      form.append("animeSeriesId", formData.animeSeriesId || "")
       form.append("isPreOrder", formData.isPreOrder ? "true" : "false")
       if (formData.preOrderReleaseDate) {
         form.append("preOrderReleaseDate", new Date(formData.preOrderReleaseDate).toISOString())
       }
       formData.tagIds.forEach((tagId) => form.append("tagIds", tagId))
       imageFiles.forEach((file) => form.append("imageFiles", file))
+      form.append("status", String(formData.status || 1))
 
       let res
       if (isEditing && initialData?.id) {
@@ -138,7 +171,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
   const handleInputChange = (
     field: keyof CreateProductDto,
-    value: string | number | string[] | boolean | Date
+    value: string | number | string[] | boolean | Date | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }))
@@ -167,7 +200,6 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     setImageFiles(newFiles)
   }
 
-  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       formData.images.forEach((image) => {
@@ -239,10 +271,8 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                       type="number"
                       step="0.01"
                       min="0"
-                      value={formData.discountPrice || ""}
-                      onChange={(e) =>
-                        handleInputChange("discountPrice", Number.parseFloat(e.target.value) || 0)
-                      }
+                      value={formData.discountPrice ?? ""}
+                      onChange={(e) => handleInputChange("discountPrice", e.target.value ? Number.parseFloat(e.target.value) : undefined)}
                       disabled={isLoading}
                     />
                     {errors.discountPrice && <p className="text-sm text-red-600">{errors.discountPrice}</p>}
@@ -268,9 +298,10 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                   <Label htmlFor="categoryId">Category *</Label>
                   <AsyncSelect
                     value={formData.categoryId}
-                    onChange={(val) => handleInputChange("categoryId", val)}
+                    onChange={(value) => handleInputChange("categoryId", value)}
                     fetchOptions={memoizedFetchCategories}
                     placeholder="Select Category..."
+                    disabled={isLoading}
                   />
                   {errors.categoryId && <p className="text-sm text-red-600">{errors.categoryId}</p>}
                 </div>
@@ -279,9 +310,10 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                   <Label htmlFor="animeSeriesId">Anime Series</Label>
                   <AsyncSelect
                     value={formData.animeSeriesId ?? ""}
-                    onChange={(val) => handleInputChange("animeSeriesId", val)}
+                    onChange={(value) => handleInputChange("animeSeriesId", value)}
                     fetchOptions={memoizedFetchAnimeSeries}
                     placeholder="Select Anime Series..."
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -290,7 +322,10 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                     <Checkbox
                       id="isPreOrder"
                       checked={formData.isPreOrder}
-                      onCheckedChange={(checked) => handleInputChange("isPreOrder", checked as boolean)}
+                      onCheckedChange={(checked) => {
+                        handleInputChange("isPreOrder", checked as boolean)
+                        if (!checked) handleInputChange("preOrderReleaseDate", undefined)
+                      }}
                       disabled={isLoading}
                     />
                     <Label htmlFor="isPreOrder">This is a pre-order item</Label>
@@ -307,7 +342,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                             ? new Date(formData.preOrderReleaseDate).toISOString().split("T")[0]
                             : ""
                         }
-                        onChange={(e) => handleInputChange("preOrderReleaseDate", new Date(e.target.value))}
+                        onChange={(e) => handleInputChange("preOrderReleaseDate", e.target.value ? new Date(e.target.value) : undefined)}
                         disabled={isLoading}
                       />
                       {errors.preOrderReleaseDate && (
@@ -323,11 +358,12 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                   </Label>
                   <AsyncMultiSelect
                     value={formData.tagIds}
-                    onChange={(val) => handleInputChange("tagIds", val)}
+                    onChange={(value) => handleInputChange("tagIds", value)}
                     fetchOptions={memoizedFetchTags}
                     placeholder="Select Tags..."
                     className="bg-[hsl(var(--background))] text-[hsl(var(--foreground))] border-[hsl(var(--border))]"
                     tagClassName="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] border-[hsl(var(--border))]"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
