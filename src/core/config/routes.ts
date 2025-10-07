@@ -16,6 +16,7 @@ export const ROUTES = {
   // Product management
   PRODUCTS: "/dashboard/products",
   PRODUCT_DETAIL: (id: string) => `/dashboard/products/${id}`,
+  PRODUCT_EDIT: (id: string) => `/dashboard/products/${id}/edit`,
   PRODUCT_CREATE: "/dashboard/products/create",
   CATEGORIES: "/dashboard/categories",
 

@@ -17,9 +17,10 @@ export interface Product extends BaseEntity {
   productTags?: ProductTag[]
   inventory?: ProductInventory
   reviews?: ProductReview[]
-  totalSales?: number // Thêm từ ProductResponse
-  averageRating?: number // Thêm từ ProductResponse
-  status: number // Thêm từ ProductResponse (EntityStatusEnum)
+  events?: EventItem[] // Thêm events để khớp với ProductResponse
+  totalSales: number // Bỏ optional để khớp với ProductResponse
+  averageRating: number // Bỏ optional để khớp với ProductResponse
+  status: number
 }
 
 export interface Category extends BaseEntity {
@@ -60,7 +61,7 @@ export interface ProductReview extends BaseEntity {
   rating: number
   title?: string
   comment?: string
-  product?: Product
+  userName?: string // Thêm userName để khớp với ProductReviewResponse
   user?: {
     id: string
     firstName: string
@@ -87,6 +88,13 @@ export interface ProductTag extends BaseEntity {
   tag?: Tag
 }
 
+export interface EventItem extends BaseEntity {
+  name: string
+  startDate: Date
+  endDate: Date
+  imagePath?: string
+}
+
 // DTOs
 export interface CreateProductDto {
   name: string
@@ -100,8 +108,8 @@ export interface CreateProductDto {
   preOrderReleaseDate?: Date
   images: string[]
   tagIds: string[]
-  status?: number // Thêm để hỗ trợ EntityStatusEnum
-  imageIds?: string[] // IDs của images để xóa
+  status?: number
+  imageIds?: string[]
 }
 
 export interface UpdateProductDto {
@@ -116,8 +124,8 @@ export interface UpdateProductDto {
   preOrderReleaseDate?: Date
   images: string[]
   tagIds: string[]
-  status?: number // Thêm để hỗ trợ EntityStatusEnum
-  imageIds?: string[] // IDs của images để xóa
+  status?: number
+  imageIds?: string[]
 }
 
 export interface ProductListItem {
@@ -135,4 +143,27 @@ export interface ProductListItem {
   primaryImage?: string
   status: number
   isPreOrder: boolean
+}
+
+// ProductResponse giữ nguyên như bạn đã cung cấp
+export interface ProductResponse {
+  id: string
+  name: string
+  categoryId: string
+  category?: { name: string }
+  animeSeriesId?: string
+  animeSeries?: { title: string }
+  stockQuantity: number
+  price: number
+  createdAt: Date
+  description?: string
+  discountPrice?: number
+  isPreOrder: boolean
+  preOrderReleaseDate?: Date
+  images?: { imagePath: string; isPrimary: boolean }[]
+  productTags?: { tag: { name: string } }[]
+  reviews?: { rating: number; title?: string; comment?: string; userName?: string }[]
+  events?: { name: string; startDate: Date; endDate: Date; imagePath?: string }[]
+  totalSales: number
+  averageRating: number
 }

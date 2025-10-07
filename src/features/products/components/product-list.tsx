@@ -156,11 +156,14 @@ export default function ProductList() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_DETAIL(product.id))}>
+                      <DropdownMenuItem onClick={() => {
+                        console.log("Navigating to View Product ID:", product.id) // Debug ID
+                        router.push(ROUTES.PRODUCT_DETAIL(product.id))
+                      }}>
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_DETAIL(product.id))}>
+                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_EDIT(product.id))}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
