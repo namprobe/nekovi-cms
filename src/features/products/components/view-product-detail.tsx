@@ -282,4 +282,4 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
             </Card>
         </div>
     )
-}
+} 
