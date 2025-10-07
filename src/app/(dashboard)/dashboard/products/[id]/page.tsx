@@ -32,8 +32,8 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
     isPreOrder: product.isPreOrder,
     preOrderReleaseDate: product.preOrderReleaseDate,
     images: product.images?.map((img) => img.imagePath) || [],
-    tagIds: product.tags?.map((tag) => tag.tagId) || [],
-    productTags: product.tags?.map((tag) => ({
+    tagIds: product.productTags?.map((tag) => tag.tagId) || [],
+    productTags: product.productTags?.map((tag) => ({
       tagId: tag.tagId,
       tag: tag.tag ? { id: tag.tagId, name: tag.tag.name } : null
     })) || [], // Thêm productTags

@@ -11,7 +11,7 @@ import { Textarea } from "@/shared/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Alert, AlertDescription } from "@/shared/ui/alert"
 import { Checkbox } from "@/shared/ui/checkbox"
-import type { CreateProductDto } from "@/entities/products/types/product"
+import type { CreateProductDto, UpdateProductDto } from "@/entities/products/types/product"
 import { ROUTES } from "@/core/config/routes"
 import { Loader2, Save, X, Upload, Trash2 } from "lucide-react"
 import { productService } from "@/entities/products/services/product"
@@ -22,13 +22,13 @@ import { AsyncMultiSelect } from "@/shared/ui/selects/async-multi-select"
 import { useTagSelectStore } from "@/entities/tags/services/tag-select-service"
 
 interface ProductFormProps {
-  initialData?: Partial<CreateProductDto> & { id?: string }
+  initialData?: Partial<CreateProductDto | UpdateProductDto> & { id?: string; imageIds?: string[] }
   isEditing?: boolean
 }
 
 export function ProductForm({ initialData, isEditing = false }: ProductFormProps) {
   const router = useRouter()
-  const [formData, setFormData] = useState<CreateProductDto>({
+  const [formData, setFormData] = useState<CreateProductDto | UpdateProductDto>({
     name: initialData?.name || "",
     description: initialData?.description || "",
     price: initialData?.price || 0,
@@ -39,9 +39,12 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     isPreOrder: initialData?.isPreOrder || false,
     preOrderReleaseDate: initialData?.preOrderReleaseDate || undefined,
     images: initialData?.images || [],
+    imageIds: initialData?.imageIds || [],
     tagIds: initialData?.tagIds || [],
     status: initialData?.status || 1,
   })
+
+  console.log("formData", formData)
 
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -80,11 +83,37 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     loadInitialOptions()
   }, [formData.categoryId, formData.animeSeriesId, formData.tagIds, fetchCategories, fetchAnimeSeries, fetchTags, setCategoryOptions, setAnimeSeriesOptions, setTagOptions])
 
+  useEffect(() => {
+    const loadProductData = async () => {
+      if (isEditing && initialData?.id) {
+        try {
+          const product = await productService.getProductById(initialData.id)
+          setFormData({
+            name: product.data?.name || "",
+            description: product.data?.description || "",
+            price: product.data?.price || 0,
+            discountPrice: product.data?.discountPrice || undefined,
+            stockQuantity: product.data?.stockQuantity || 0,
+            categoryId: product.data?.categoryId || "",
+            animeSeriesId: product.data?.animeSeriesId || "",
+            isPreOrder: product.data?.isPreOrder || false,
+            preOrderReleaseDate: product.data?.preOrderReleaseDate || undefined,
+            images: product.data?.images?.map(img => img.imagePath) || [],
+            imageIds: product.data?.images?.map(img => img.id) || [],
+            tagIds: product.data?.productTags?.map(pt => pt.tagId) || [],
+            status: product.data?.status || 1,
+          })
+        } catch (err) {
+          console.error("Error loading product data:", err)
+          setErrors({ general: "Failed to load product data" })
+        }
+      }
+    }
+    loadProductData()
+  }, [initialData?.id, isEditing])
+
   const memoizedFetchCategories = useCallback(
     async (search: string) => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`Fetching categories with search: "${search}"`)
-      }
       const res = await fetchCategories(search)
       return res.map((item) => ({ id: item.id, label: item.name }))
     },
@@ -93,9 +122,6 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
   const memoizedFetchAnimeSeries = useCallback(
     async (search: string) => {
-      if (process.env.NODE_ENV === "development") {
-        console.log(`Fetching anime series with search: "${search}"`)
-      }
       const res = await fetchAnimeSeries(search)
       return res.map((item) => ({ id: item.id, label: item.title }))
     },
@@ -112,9 +138,11 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    if (!formData.name.trim()) newErrors.name = "Product name is required"
-    if (!formData.categoryId) newErrors.categoryId = "Category is required"
-    if (formData.price <= 0) newErrors.price = "Price must be greater than 0"
+    if (!formData.name.trim()) {
+      newErrors.name = "The Name field is required"
+    }
+    if (!isEditing && !formData.categoryId) newErrors.categoryId = "Category is required"
+    if (!isEditing && formData.price <= 0) newErrors.price = "Price must be greater than 0"
     if (formData.discountPrice && formData.discountPrice >= formData.price)
       newErrors.discountPrice = "Discount price must be less than regular price"
     if (formData.stockQuantity < 0) newErrors.stockQuantity = "Stock quantity cannot be negative"
@@ -135,20 +163,29 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
     try {
       const form = new FormData()
-      form.append("name", formData.name)
-      form.append("description", formData.description || "")
-      form.append("price", String(formData.price))
-      form.append("discountPrice", formData.discountPrice ? String(formData.discountPrice) : "")
-      form.append("stockQuantity", String(formData.stockQuantity))
-      form.append("categoryId", formData.categoryId)
-      form.append("animeSeriesId", formData.animeSeriesId || "")
+      if (formData.name) form.append("name", formData.name)
+      if (formData.description) form.append("description", formData.description)
+      if (formData.price) form.append("price", String(formData.price))
+      if (formData.discountPrice) form.append("discountPrice", String(formData.discountPrice))
+      if (formData.stockQuantity || formData.stockQuantity === 0) form.append("stockQuantity", String(formData.stockQuantity))
+      if (formData.categoryId) form.append("categoryId", formData.categoryId)
+      if (formData.animeSeriesId) form.append("animeSeriesId", formData.animeSeriesId)
       form.append("isPreOrder", formData.isPreOrder ? "true" : "false")
       if (formData.preOrderReleaseDate) {
         form.append("preOrderReleaseDate", new Date(formData.preOrderReleaseDate).toISOString())
       }
       formData.tagIds.forEach((tagId) => form.append("tagIds", tagId))
-      imageFiles.forEach((file) => form.append("imageFiles", file))
-      form.append("status", String(formData.status || 1))
+      // Chỉ gửi các file ảnh tương ứng với formData.images
+      imageFiles.forEach((file, index) => {
+        const correspondingImageUrl = formData.images[index + (formData.imageIds?.length || 0)]
+        if (correspondingImageUrl && correspondingImageUrl.startsWith("blob:")) {
+          form.append("imageFiles", file)
+        }
+      })
+
+      if (isEditing && formData.imageIds) {
+        formData.imageIds.forEach((id) => form.append("existingImageIds", id))
+      }
 
       let res
       if (isEditing && initialData?.id) {
@@ -170,7 +207,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
   }
 
   const handleInputChange = (
-    field: keyof CreateProductDto,
+    field: keyof (CreateProductDto | UpdateProductDto),
     value: string | number | string[] | boolean | Date | undefined
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -180,7 +217,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
-    if (imageFiles.length + files.length > 5) {
+    if (imageFiles.length + files.length + (formData.imageIds?.length || 0) > 5) {
       setErrors({ images: "Cannot upload more than 5 images" })
       return
     }
@@ -193,11 +230,17 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     const imageToRemove = formData.images[index]
     if (imageToRemove.startsWith("blob:")) {
       URL.revokeObjectURL(imageToRemove)
+      // Đồng bộ imageFiles với formData.images
+      const blobIndex = formData.images.slice(formData.imageIds?.length || 0).findIndex((img) => img === imageToRemove)
+      if (blobIndex !== -1) {
+        setImageFiles((prev) => prev.filter((_, i) => i !== blobIndex))
+      }
+    } else if (isEditing && formData.imageIds) {
+      const newImageIds = formData.imageIds.filter((_, i) => i !== index)
+      handleInputChange("imageIds", newImageIds)
     }
     const newImages = formData.images.filter((_, i) => i !== index)
-    const newFiles = imageFiles.filter((_, i) => i !== index)
     handleInputChange("images", newImages)
-    setImageFiles(newFiles)
   }
 
   useEffect(() => {
@@ -228,7 +271,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name *</Label>
+                  <Label htmlFor="name">Product Name {isEditing ? "" : "*"}</Label>
                   <Input
                     id="name"
                     type="text"
@@ -252,7 +295,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price *</Label>
+                    <Label htmlFor="price">Price {isEditing ? "" : "*"}</Label>
                     <Input
                       id="price"
                       type="number"
@@ -280,7 +323,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="stockQuantity">Stock Quantity *</Label>
+                  <Label htmlFor="stockQuantity">Stock Quantity {isEditing ? "" : "*"}</Label>
                   <Input
                     id="stockQuantity"
                     type="number"
@@ -295,7 +338,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="categoryId">Category *</Label>
+                  <Label htmlFor="categoryId">Category {isEditing ? "" : "*"}</Label>
                   <AsyncSelect
                     value={formData.categoryId}
                     onChange={(value) => handleInputChange("categoryId", value)}
@@ -398,11 +441,10 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
                       {formData.images.map((image, index) => (
                         <div key={index} className="relative group">
                           <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted">
-                            <Image
+                            <img
                               src={image || "/placeholder.svg"}
+                              className="object-cover w-full h-full"
                               alt={`Product image ${index + 1}`}
-                              fill
-                              className="object-cover"
                             />
                             {index === 0 && (
                               <div className="absolute top-2 left-2">

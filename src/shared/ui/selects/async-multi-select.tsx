@@ -33,10 +33,7 @@ export function AsyncMultiSelect({
 
     // Preload initialOptions vào cachedOptions khi component mount
     React.useEffect(() => {
-        console.log("AsyncMultiSelect - Preloading for value:", value); // Debug
-        console.log("AsyncMultiSelect - Current cachedOptions:", cachedOptions);
         if (value.length > 0 && value.some((id) => !cachedOptions.find((o) => o.id === id))) {
-            console.log("AsyncMultiSelect - Triggering loadOptions('')");
             loadOptions("");
         }
     }, [value, cachedOptions]);

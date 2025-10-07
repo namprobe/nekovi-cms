@@ -14,7 +14,7 @@ export interface Product extends BaseEntity {
   category?: Category
   animeSeries?: AnimeSeries
   images?: ProductImage[]
-  tags?: ProductTag[]
+  productTags?: ProductTag[]
   inventory?: ProductInventory
   reviews?: ProductReview[]
   totalSales?: number // Thêm từ ProductResponse
@@ -101,21 +101,23 @@ export interface CreateProductDto {
   images: string[]
   tagIds: string[]
   status?: number // Thêm để hỗ trợ EntityStatusEnum
+  imageIds?: string[] // IDs của images để xóa
 }
 
 export interface UpdateProductDto {
-  name?: string
+  name: string
   description?: string
-  price?: number
+  price: number
   discountPrice?: number
-  stockQuantity?: number
-  categoryId?: string
+  stockQuantity: number
+  categoryId: string
   animeSeriesId?: string
-  isPreOrder?: boolean
+  isPreOrder: boolean
   preOrderReleaseDate?: Date
-  images?: string[]
-  tagIds?: string[]
+  images: string[]
+  tagIds: string[]
   status?: number // Thêm để hỗ trợ EntityStatusEnum
+  imageIds?: string[] // IDs của images để xóa
 }
 
 export interface ProductListItem {

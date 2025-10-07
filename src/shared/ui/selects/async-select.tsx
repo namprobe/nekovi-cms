@@ -28,7 +28,6 @@ export function AsyncSelect({ value, onChange, fetchOptions, placeholder, disabl
 
     const loadOptions = useCallback(
         debounce(async (searchValue: string) => {
-            console.log(`Loading options with search: "${searchValue}"`);
             setLoading(true);
             try {
                 const res = await fetchOptions(searchValue);
