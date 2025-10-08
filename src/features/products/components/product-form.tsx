@@ -44,7 +44,6 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     status: initialData?.status || 1,
   })
 
-  console.log("formData", formData)
 
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -143,8 +142,8 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     }
     if (!isEditing && !formData.categoryId) newErrors.categoryId = "Category is required"
     if (!isEditing && formData.price <= 0) newErrors.price = "Price must be greater than 0"
-    if (formData.discountPrice && formData.discountPrice >= formData.price)
-      newErrors.discountPrice = "Discount price must be less than regular price"
+    if (formData.discountPrice && (formData.discountPrice > 100 || formData.discountPrice < 0))
+      newErrors.discountPrice = "Discount price must be between 0 and 100"
     if (formData.stockQuantity < 0) newErrors.stockQuantity = "Stock quantity cannot be negative"
     if (formData.isPreOrder && !formData.preOrderReleaseDate)
       newErrors.preOrderReleaseDate = "Pre-order release date is required"
@@ -413,7 +412,7 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
 
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <Label>Product Images</Label>
+                  <Label>Product Images {isEditing ? "" : "*"}</Label>
                   <div className="flex items-center space-x-4">
                     <label
                       htmlFor="image-upload"

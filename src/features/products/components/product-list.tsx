@@ -119,14 +119,14 @@ export default function ProductList() {
           </TableHeader>
           <TableBody>
             {filteredProducts.map((product) => (
+              console.log("Rendering product:", product), // Debug each product being rendered
               <TableRow key={product.id}>
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                      <Image
+                      <img
                         src={product.primaryImage || "/placeholder.svg"}
                         alt={product.name}
-                        fill
                         className="object-cover"
                       />
                     </div>
@@ -157,7 +157,6 @@ export default function ProductList() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => {
-                        console.log("Navigating to View Product ID:", product.id) // Debug ID
                         router.push(ROUTES.PRODUCT_DETAIL(product.id))
                       }}>
                         <Eye className="mr-2 h-4 w-4" />

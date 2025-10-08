@@ -43,6 +43,13 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
             ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price)
             : "N/A"
 
+    const formatDiscount = (discountPercent?: number) => {
+        return discountPercent && discountPercent > 0
+            ? `-${discountPercent}%`
+            : ""
+    }
+
+
     const InfoRow = ({
         icon,
         label,
@@ -86,7 +93,7 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
                 <InfoRow
                     icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
                     label="Discount Price"
-                    value={formatPrice(product.discountPrice)}
+                    value={formatDiscount(product.discountPrice)}
                 />
                 <InfoRow
                     icon={<Calendar className="h-4 w-4 text-muted-foreground" />}

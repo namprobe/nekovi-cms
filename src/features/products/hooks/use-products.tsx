@@ -19,7 +19,6 @@ export function useProducts(paramsInit = { page: 1, limit: 10, search: "" }) {
         setError(null)
         try {
             const res = await productService.getProducts({ page, limit, search })
-            console.log("Products Responseiiiiiiiiiiiiii:", res) // Debug response
             if ((res as any).isSuccess === false) {
                 setError((res as any).message || "Failed to fetch products")
                 setItems([])
@@ -64,7 +63,6 @@ export function useProductDetail(id?: string) {
         setError(null)
         try {
             const res = await productService.getProductById(id)
-            console.log("API Response:", res) // Debug response
             if (res.isSuccess) {
                 setItem(res.data as ProductResponse)
             } else {
