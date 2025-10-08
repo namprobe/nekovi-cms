@@ -1,9 +1,11 @@
+// src/features/dashboard/components/breadcrumb.tsx
 "use client"
 
 import React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useProductDetail } from "@/features/products/hooks/use-products"
 import { ChevronRight, Home } from "lucide-react"
 import { ROUTES } from "@/core/config/routes"
 
@@ -27,9 +29,11 @@ const routeLabels: Record<string, string> = {
 
 export function Breadcrumb() {
   const pathname = usePathname()
+  const segments = pathname.split("/").filter(Boolean)
+  const productId = segments.length > 2 && segments[1] === "products" ? segments[2] : undefined
+  const { item: product, loading: productLoading } = useProductDetail(productId)
 
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
-    const segments = pathname.split("/").filter(Boolean)
     const breadcrumbs: BreadcrumbItem[] = []
 
     // Always start with Dashboard
@@ -44,7 +48,12 @@ export function Breadcrumb() {
       // Skip the first 'dashboard' segment as we already added it
       if (segment === "dashboard") continue
 
-      const label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+      let label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+
+      // Replace ID with product name if available
+      if (i === 2 && segments[1] === "products" && product && !productLoading) {
+        label = product.name || label
+      }
 
       // Don't add href for the last segment (current page)
       const isLast = i === segments.length - 1

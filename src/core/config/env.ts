@@ -3,11 +3,15 @@ function normalizeUrl(url: string): string {
     return url.endsWith('/') ? url.slice(0, -1) : url;
 }
 
+const BASE_URL = normalizeUrl(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5240");
+const CMS_PREFIX = process.env.NEXT_PUBLIC_CMS_PREFIX || "/api/cms";
+const COMMON_PREFIX = process.env.NEXT_PUBLIC_COMMON_PREFIX || "/api/common";
+
 export const env = {
     //API Configuration
-    BASE_URL: normalizeUrl(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5240"),
-    CMS_PREFIX: process.env.NEXT_PUBLIC_CMS_PREFIX || "/api/cms",
-    COMMON_PREFIX: process.env.NEXT_PUBLIC_COMMON_PREFIX || "/api/common",
+    BASE_URL,
+    CMS_PREFIX,
+    COMMON_PREFIX,
 
     //app config
     APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || "NekoVi CMS",
@@ -29,12 +33,30 @@ export const env = {
     ENDPOINTS: {
         AUTH: {
             LOGIN: "/auth/login",
-            LOGOUT: "/auth/logout", 
+            LOGOUT: "/auth/logout",
             PROFILE: "/auth/profile",
             REFRESH_TOKEN: "/auth/refresh-token",
-        }
+        },
+        PRODUCT: {
+            LIST: `${CMS_PREFIX}/products`,
+            DETAIL: (id: string) => `${CMS_PREFIX}/products/${id}`,
+            CREATE: `${CMS_PREFIX}/products`,   // POST tạo mới
+            UPDATE: (id: string) => `${CMS_PREFIX}/products/${id}`, // PUT/PATCH
+            DELETE: (id: string) => `${CMS_PREFIX}/products/${id}`, // DELETE
+            UPLOAD_IMAGE: `${CMS_PREFIX}/product-image`, // POST upload ảnh
+        },
+        CATEGORY: {
+            SELECT_LIST: `/categories/select-list`
+        },
+        ANIME: {
+            SELECT_LIST: `/anime-series/select-list`
+        },
+        TAG: {
+            SELECT_LIST: `/tags/select-list`,
+        },
+
     }
-} as const; 
+} as const;
 
 // Validation function to ensure required env vars are present
 export function validateEnv() {
