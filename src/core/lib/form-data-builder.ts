@@ -172,3 +172,32 @@ export function logFormData(formData: FormData, label = "FormData"): void {
   }
   console.groupEnd()
 }
+
+
+// ...existing code...
+export function buildCreateUserFormData(payload: {
+  email: string
+  firstName: string
+  lastName: string
+  phoneNumber?: string | null
+  password: string
+  roleIds: string[]
+  avatarFile?: File | null
+  status?: number | null
+}): FormData {
+  const fd = new FormData()
+  fd.append("Email", payload.email ?? "")
+  fd.append("FirstName", payload.firstName ?? "")
+  fd.append("LastName", payload.lastName ?? "")
+  fd.append("PhoneNumber", payload.phoneNumber ?? "")
+  fd.append("Password", payload.password ?? "")
+  ;(payload.roleIds ?? []).forEach((r) => fd.append("RoleIds", r))
+  if (payload.avatarFile) {
+    fd.append("AvatarPath", payload.avatarFile)
+  } else {
+    fd.append("AvatarPath", "") // send empty value per swagger
+  }
+  fd.append("Status", payload.status != null ? String(payload.status) : "")
+  return fd
+}
+// ...existing code...
