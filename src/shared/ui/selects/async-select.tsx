@@ -6,7 +6,7 @@ import { debounce } from "lodash";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/shared/ui/select";
 import "./styles.css"; // Import CSS
 
-interface Option {
+export interface Option {
     id: string;
     label: string;
 }

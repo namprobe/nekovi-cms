@@ -1,29 +1,25 @@
-import { env } from "@/core/config/env"
-
-export interface Category {
-    id: string
-    name: string
-}
+//src/entities/categories/services/category.ts
+import { apiClient } from "@/core/lib/api-client"
+import type { Category } from "../types/category"
+import { ApiResult } from "@/shared/types/common"
 
 export const categoryService = {
-    async getCategories(search: string = "", page: number = 1, pageSize: number = 10) {
-        const url = new URL(`${env.BASE_URL}${env.CMS_PREFIX}/categories`)
-        url.searchParams.append("search", search)
-        url.searchParams.append("page", page.toString())
-        url.searchParams.append("pageSize", pageSize.toString())
 
-        const res = await fetch(url.toString(), {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-        })
-
-        if (!res.ok) throw new Error("Failed to fetch categories")
-        return res.json() as Promise<{
-            items: Category[]
-            total: number
-            hasMore: boolean
-        }>
+    async getCategories(params: { page?: number; limit?: number; search?: string }) {
+        return apiClient.paginate<Category>("/categories", params)
     },
+
+    async getCategoryById(id: string) {
+        return apiClient.get<Category>(`/categories/${id}`)
+    },
+
+    createCategory: (formData: FormData) =>
+        apiClient.postFormData<ApiResult<any>>("/categories", formData),
+
+    updateCategory: (id: string, formData: FormData) =>
+        apiClient.putFormData<ApiResult<any>>(`/categories/${id}`, formData),
+
+    async deleteCategory(id: string) {
+        return apiClient.delete<void>(`/categories/${id}`)
+    }
 }
