@@ -9,9 +9,11 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
 
   // User management
-  USERS: "/dashboard/users",
+   USERS: "/dashboard/users",
+  USER_CREATE: "/dashboard/users/create", 
   USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
-  USER_CREATE: "/dashboard/users/create",
+  USER_EDIT: (id: string) => `/dashboard/users/${id}/edit`,
+
 
   // Product management
   PRODUCTS: "/dashboard/products",
