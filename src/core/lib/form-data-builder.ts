@@ -23,6 +23,42 @@ interface FormDataOptions {
   dateFormat?: "iso" | "date-only" | "datetime-local"
 }
 
+
+// Thêm function này vào file
+export function buildUpdateUserFormData(payload: {
+  firstName: string
+  lastName: string
+  email?: string
+  phoneNumber?: string
+  roleIds: string[]
+  status: number
+  avatarFile?: File | null
+}): FormData {
+  const fd = new FormData()
+  
+  // Required fields
+  fd.append("FirstName", payload.firstName)
+  fd.append("LastName", payload.lastName)
+  fd.append("Status", payload.status.toString())
+  
+  // Optional fields
+  if (payload.email) fd.append("Email", payload.email)
+  if (payload.phoneNumber) fd.append("PhoneNumber", payload.phoneNumber)
+  
+  // Role IDs - append từng cái một
+  payload.roleIds.forEach(roleId => {
+    fd.append("RoleIds", roleId)
+  })
+  
+  // Avatar file
+  if (payload.avatarFile) {
+    fd.append("AvatarPath", payload.avatarFile)
+  }
+
+  return fd
+}
+
+
 /**
  * Build FormData từ object với support cho files
  */

@@ -1,11 +1,16 @@
+// src/app/(dashboard)/dashboard/users/create/page.tsx
 import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
 import { UserForm } from "@/features/user/components/user-form"
 
 export default function CreateUserPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Create User</h1>
-      <UserForm />
+    <div>
+      <Breadcrumb />
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold text-foreground">Create User</h1>
+        <p className="text-muted-foreground">Add a new user to the system.</p>
+        <UserForm mode="create" />
+      </div>
     </div>
   )
 }

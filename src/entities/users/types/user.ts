@@ -112,8 +112,30 @@ export interface UserResponse {
   lockoutEnabled: boolean
   accessFailedCount: number
   status?: number
-  roles: Role[]
+  // roles: Role[]
   customerProfile?: CustomerProfile
   staffProfile?: StaffProfile
   addresses?: UserAddress[]
+}
+
+
+// Trong /entities/users/types/user.ts
+export interface UpdateUserPayload {
+  firstName: string
+  lastName: string
+  email?: string | null  // ✅ Cho phép cả undefined và null
+  phoneNumber?: string | null
+  roleIds: string[]
+  status: number
+  avatarPath?: string | null
+}
+
+export interface UpdateUserRequest {
+  firstName: string
+  lastName: string
+  email?: string | null  // ✅ Cho phép cả undefined và null
+  phoneNumber?: string | null
+  avatarPath?: string | null
+  roleIds: string[]
+  status: number
 }
