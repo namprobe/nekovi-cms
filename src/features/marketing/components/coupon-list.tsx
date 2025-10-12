@@ -1,131 +1,162 @@
+// src/features/coupons/components/coupon-list.tsx
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Badge } from "@/shared/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-// Mock interface
-interface CouponListItem {
-  id: string
-  name: string
-  code?: string
-  description?: string
-  discountType: string
-  discountValue: number
-  minOrderAmount: number
-  maxDiscountAmount?: number
-  validFrom: Date
-  validTo: Date
-  startDate?: Date
-  endDate?: Date
-  usageLimit?: number
-  usedCount: number
-  isActive: boolean
-  status?: string | number
-}
-import { ROUTES } from "@/core/config/routes"
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye, Filter, Percent, Calendar } from "lucide-react"
-
-// Mock data - replace with actual API call
-const mockCoupons: CouponListItem[] = [
-  {
-    id: "1",
-    name: "Anime 2024 Discount",
-    code: "ANIME2024",
-    description: "20% off all anime figures",
-    discountType: "percentage",
-    discountValue: 20,
-    minOrderAmount: 50,
-    maxDiscountAmount: 100,
-    validFrom: new Date("2024-01-01T00:00:00Z"),
-    validTo: new Date("2024-12-31T23:59:59Z"),
-    startDate: new Date("2024-01-01T00:00:00Z"),
-    endDate: new Date("2024-12-31T23:59:59Z"),
-    usageLimit: 1000,
-    usedCount: 245,
-    isActive: true,
-    status: 1,
-  },
-  // TODO: Add more mock data matching CouponListItem interface
-]
-
-const statusOptions = [
-  { value: "all", label: "All Coupons" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-  { value: "expired", label: "Expired" },
-]
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Copy } from "lucide-react"
+import { couponService } from "@/entities/coupon/services/coupon"
+import type { Coupon } from "@/entities/coupon/types/coupon"
+import { CouponFormDialog } from "./coupon-form-dialog"
+import { useToast } from "@/hooks/use-toast"
 
 export function CouponList() {
-  const router = useRouter()
-  const [coupons, setCoupons] = useState<CouponListItem[]>([])
+  const { toast } = useToast()
+  const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [filteredCoupons, setFilteredCoupons] = useState<CouponListItem[]>([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null)
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCoupons(mockCoupons)
+  // 🧩 Pagination states
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+  const [total, setTotal] = useState(0)
+
+  const fetchCoupons = async () => {
+    try {
+      setLoading(true)
+      const response = await couponService.getCoupons({
+        page,
+        limit,
+        search: searchTerm,
+      })
+
+      // ✅ Ensure response has { items, total } structure
+      setCoupons(response.items || [])
+      setTotal(response.totalItems || 0)
+    } catch (error: any) {
+      console.error("Failed to load coupons:", error)
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to load coupons", 
+        variant: "destructive" 
+      })
+    } finally {
       setLoading(false)
-    }, 1000)
-  }, [])
-
-  useEffect(() => {
-    let filtered = coupons.filter(
-      (coupon) =>
-        coupon.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
-
-    if (selectedStatus !== "all") {
-      if (selectedStatus === "expired") {
-        filtered = filtered.filter((coupon) => coupon.endDate && new Date(coupon.endDate) < new Date())
-      } else {
-        const isActive = selectedStatus === "active"
-        filtered = filtered.filter((coupon) => coupon.isActive === isActive)
-      }
-    }
-
-    setFilteredCoupons(filtered)
-  }, [coupons, searchTerm, selectedStatus])
-
-  const getStatusBadge = (coupon: CouponListItem) => {
-    const now = new Date()
-    const endDate = coupon.endDate ? new Date(coupon.endDate) : null
-
-    if (endDate && endDate < now) {
-      return <Badge variant="error">Expired</Badge>
-    } else if (!coupon.isActive) {
-      return <Badge variant="neutral">Inactive</Badge>
-    } else if (coupon.usedCount >= (coupon.usageLimit || 0)) {
-      return <Badge variant="warning">Used Up</Badge>
-    } else {
-      return <Badge variant="success">Active</Badge>
     }
   }
 
-  const getDiscountDisplay = (coupon: CouponListItem) => {
-    if (coupon.discountType === "percentage") {
+  // Call API when page, limit, or searchTerm changes
+  useEffect(() => {
+    fetchCoupons()
+  }, [page, limit, searchTerm])
+
+  const getStatusBadge = (status: number) => {
+    const statusConfig = {
+      1: { text: "Active", variant: "success" as const },
+      0: { text: "Inactive", variant: "outline" as const },
+      2: { text: "Expired", variant: "destructive" as const }
+    }
+    const config = statusConfig[status as keyof typeof statusConfig] || { text: "Unknown", variant: "outline" as const }
+    return <Badge variant={config.variant}>{config.text}</Badge>
+  }
+
+  const getDiscountTypeText = (discountType: number) => {
+    return discountType === 1 ? "Percentage" : "Fixed Amount"
+  }
+
+  const formatDiscount = (coupon: Coupon) => {
+    if (coupon.discountType === 1) {
       return `${coupon.discountValue}%`
     } else {
-      return `$${coupon.discountValue}`
+      return `$${coupon.discountValue.toFixed(2)}`
     }
   }
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(date))
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString()
   }
+
+  const isCouponExpired = (endDate: string) => {
+    return new Date(endDate) < new Date()
+  }
+
+  const handleCreate = () => {
+    setEditingCoupon(null)
+    setIsDialogOpen(true)
+  }
+
+  const handleEdit = (coupon: Coupon) => {
+    setEditingCoupon(coupon)
+    setIsDialogOpen(true)
+  }
+
+  const handleDelete = async (couponId: string) => {
+    if (!confirm("Are you sure you want to delete this coupon?")) return
+    try {
+      await couponService.deleteCoupon(couponId)
+      toast({ title: "Success", description: "Coupon deleted successfully" })
+      await fetchCoupons()
+    } catch (error: any) {
+      console.error(error)
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to delete coupon", 
+        variant: "destructive" 
+      })
+    }
+  }
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code)
+    toast({
+      title: "Copied!",
+      description: "Coupon code copied to clipboard",
+    })
+  }
+
+  // Trong coupon-list.tsx - SỬA handleSave function
+const handleSave = async (formData: FormData, isEdit: boolean, id?: string) => {
+  try {
+    // ✅ CONVERT FormData thành JSON object
+    const jsonData = {
+      code: formData.get("Code") as string,
+      description: formData.get("Description") as string || undefined,
+      discountType: parseInt(formData.get("DiscountType") as string),
+      discountValue: parseFloat(formData.get("DiscountValue") as string),
+      minOrderAmount: parseFloat(formData.get("MinOrderAmount") as string),
+      startDate: formData.get("StartDate") as string,
+      endDate: formData.get("EndDate") as string,
+      usageLimit: formData.get("UsageLimit") ? parseInt(formData.get("UsageLimit") as string) : undefined,
+      status: parseInt(formData.get("Status") as string),
+    }
+
+    console.log("📤 Sending JSON data:", jsonData) // Debug
+
+    if (isEdit && id) {
+      await couponService.updateCoupon(id, jsonData)
+      toast({ title: "Success", description: "Coupon updated successfully" })
+    } else {
+      await couponService.createCoupon(jsonData)
+      toast({ title: "Success", description: "Coupon created successfully" })
+    }
+    
+    setIsDialogOpen(false)
+    await fetchCoupons()
+  } catch (error: any) {
+    console.error("Save error:", error)
+    toast({ 
+      title: "Error", 
+      description: error.message || "Failed to save coupon", 
+      variant: "destructive" 
+    })
+  }
+}
 
   if (loading) {
     return (
@@ -144,86 +175,107 @@ export function CouponList() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Coupons</CardTitle>
-          <Button onClick={() => router.push(ROUTES.COUPON_CREATE)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Coupon
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Create Coupon
           </Button>
         </div>
-        <div className="flex items-center space-x-4">
+
+        <div className="flex items-center space-x-2 mt-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search coupons..."
+              placeholder="Search coupons by code..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setPage(1) // reset page when searching
+                setSearchTerm(e.target.value)
+              }}
               className="pl-10"
             />
           </div>
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-40">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </CardHeader>
+
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Code</TableHead>
-              <TableHead>Description</TableHead>
               <TableHead>Discount</TableHead>
+              <TableHead>Min Order</TableHead>
+              <TableHead>Validity</TableHead>
               <TableHead>Usage</TableHead>
-              <TableHead>Valid Period</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[80px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCoupons.map((coupon) => (
-              <TableRow key={coupon.id}>
+            {coupons.map((coupon) => (
+              <TableRow key={coupon.id} className={isCouponExpired(coupon.endDate) ? "opacity-60" : ""}>
                 <TableCell>
-                  <div className="font-mono font-medium">{coupon.code}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-xs line-clamp-2">{coupon.description}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-1">
-                    <Percent className="h-3 w-3 text-muted-foreground" />
-                    <span className="font-medium">{getDiscountDisplay(coupon)}</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono font-medium bg-blue-50 px-2 py-1 rounded text-sm">
+                      {coupon.code}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => handleCopyCode(coupon.code)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
                   </div>
-                  {coupon.minOrderAmount > 0 && (
-                    <div className="text-xs text-muted-foreground">Min: ${coupon.minOrderAmount}</div>
+                  {coupon.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{coupon.description}</p>
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="text-sm">
-                    {coupon.usedCount} / {coupon.usageLimit}
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                    <div
-                      className="bg-blue-600 h-1.5 rounded-full"
-                      style={{ width: `${coupon.usageLimit ? Math.min((coupon.usedCount / coupon.usageLimit) * 100, 100) : 0}%` }}
-                    ></div>
+                  <div className="space-y-1">
+                    <span className="font-medium">{formatDiscount(coupon)}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {getDiscountTypeText(coupon.discountType)}
+                    </Badge>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center space-x-1 text-sm">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    <span>{coupon.startDate ? formatDate(coupon.startDate) : 'N/A'}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">to {coupon.endDate ? formatDate(coupon.endDate) : 'N/A'}</div>
+                  ${coupon.minOrderAmount.toFixed(2)}
                 </TableCell>
-                <TableCell>{getStatusBadge(coupon)}</TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div className="text-sm">
+                      <span className="font-medium">From:</span> {formatDate(coupon.startDate)}
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-medium">To:</span> {formatDate(coupon.endDate)}
+                    </div>
+                    {isCouponExpired(coupon.endDate) && (
+                      <Badge variant="destructive" className="text-xs">
+                        Expired
+                      </Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <div className="text-sm">
+                      {coupon.currentUsage} / {coupon.usageLimit || '∞'} used
+                    </div>
+                    {coupon.usageLimit && (
+                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div 
+                          className="bg-blue-600 h-1.5 rounded-full" 
+                          style={{ 
+                            width: `${Math.min((coupon.currentUsage / coupon.usageLimit) * 100, 100)}%` 
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(coupon.status)}
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -232,15 +284,14 @@ export function CouponList() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.COUPON_DETAIL(coupon.id))}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.COUPON_DETAIL(coupon.id))}>
+                      <DropdownMenuItem onClick={() => handleEdit(coupon)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem 
+                        className="text-red-600" 
+                        onClick={() => handleDelete(coupon.id)}
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -252,12 +303,34 @@ export function CouponList() {
           </TableBody>
         </Table>
 
-        {filteredCoupons.length === 0 && (
+        {coupons.length === 0 && (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No coupons found</p>
           </div>
         )}
+
+        {/* ✅ Pagination */}
+        <div className="mt-4 flex justify-between items-center">
+          <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            Prev
+          </Button>
+          <span>
+            Page {page} of {Math.ceil(total / limit) || 1}
+          </span>
+          <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)}>
+            Next
+          </Button>
+        </div>
       </CardContent>
+
+      {isDialogOpen && (
+        <CouponFormDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          editingCoupon={editingCoupon}
+          onSave={handleSave}
+        />
+      )}
     </Card>
   )
 }
