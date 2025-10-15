@@ -59,6 +59,13 @@ export const env = {
         TAG: {
             SELECT_LIST: `/tags/select-list`,
         },
+        EVENT: {
+            LIST: `/events`,
+            DETAIL: (id: string) => `/events/${id}`,
+            CREATE: `/events`,
+            UPDATE: (id: string) => `/events/${id}`,
+            DELETE: (id: string) => `/events/${id}`,
+        },
 
     }
 } as const;

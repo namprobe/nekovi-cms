@@ -32,6 +32,7 @@ export const ROUTES = {
   // Event management
   EVENTS: "/dashboard/events",
   EVENT_DETAIL: (id: string) => `/dashboard/events/${id}`,
+  EVENT_EDIT: (id: string) => `/dashboard/events/${id}/edit`,
   EVENT_CREATE: "/dashboard/events/create",
 
   // Marketing
