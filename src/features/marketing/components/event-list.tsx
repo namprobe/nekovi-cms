@@ -166,89 +166,83 @@ export function EventList() {
       </CardHeader>
 
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Event</TableHead>
-              <TableHead>Date & Time</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {events.map((event) => (
-              <TableRow key={event.id}>
-                <TableCell>
-                  <div className="flex items-center space-x-3">
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={event.imagePath || "/placeholder.svg"}
-                        alt={event.name || "Event image"}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="font-medium line-clamp-1">{event.name}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-1">{event.description}</div>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-1 text-sm">
-                    <Calendar className="h-3 w-3 text-muted-foreground" />
-                    <span>{formatDate(event.startDate)}</span>
-                  </div>
-                  {event.endDate && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      to {formatDate(event.endDate)}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-1 text-sm">
-                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                    <span className="line-clamp-1">{event.location}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{getStatusBadge(event.status)}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_DETAIL(event.id))}>
-                        <Eye className="mr-2 h-4 w-4" /> View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_EDIT(event.id))}>
-                        <Edit className="mr-2 h-4 w-4" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(event.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+        <div className="w-full overflow-x-auto">
+          <Table className="min-w-[800px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Event</TableHead>
+                <TableHead>Date & Time</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[80px] text-right"></TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
 
-        {events.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No events found</p>
-          </div>
-        )}
+            <TableBody>
+              {events.map((event) => (
+                <TableRow key={event.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                        <img
+                          src={event.imagePath || "/placeholder.svg"}
+                          alt={event.name || "Event image"}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                      <div className="min-w-[150px]">
+                        <div className="font-medium line-clamp-1">{event.name}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-1">
+                          {event.description}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
 
-        {/* Pagination */}
-        <div className="mt-4 flex justify-between items-center">
-          <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</Button>
-          <span>Page {page} of {Math.ceil(total / limit) || 1}</span>
-          <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)}>Next</Button>
+                  <TableCell className="whitespace-nowrap">
+                    <div className="flex items-center space-x-1 text-sm">
+                      <span>{formatDate(event.startDate)}</span>
+                    </div>
+                    {event.endDate && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        to {formatDate(event.endDate)}
+                      </div>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="whitespace-nowrap">
+                    <span className="line-clamp-1">{event.location}</span>
+                  </TableCell>
+
+                  <TableCell>{getStatusBadge(event.status)}</TableCell>
+
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_DETAIL(event.id))}>
+                          <Eye className="mr-2 h-4 w-4" /> View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_EDIT(event.id))}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDelete(event.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>

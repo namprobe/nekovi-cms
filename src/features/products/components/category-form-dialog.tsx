@@ -10,7 +10,7 @@ import { AsyncSelect } from "@/shared/ui/selects/async-select"
 import { useCategorySelectStore } from "@/entities/categories/services/category-select-service"
 import type { Category } from "@/entities/categories/types/category"
 import type { Option } from "@/shared/ui/selects/async-select"
-import { Upload, X, Loader2 } from "lucide-react"
+import { Upload, X, Loader2, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface CategoryFormDialogProps {
@@ -29,6 +29,8 @@ export function CategoryFormDialog({ open, onOpenChange, categories, editingCate
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [isLoading, setIsLoading] = useState(false)
     const { fetchOptions, setOptions } = useCategorySelectStore()
+    const [removeImage, setRemoveImage] = useState(false)
+
 
     useEffect(() => {
         if (editingCategory) {
@@ -125,6 +127,8 @@ export function CategoryFormDialog({ open, onOpenChange, categories, editingCate
         if (formData.parentCategoryId) data.append("ParentCategoryId", formData.parentCategoryId)
         data.append("Status", "1") // Change to "Active" if back-end requires string
         if (file) data.append("ImageFile", file)
+        data.append("RemoveImage", removeImage.toString())
+
 
         setIsLoading(true)
         try {
@@ -139,6 +143,13 @@ export function CategoryFormDialog({ open, onOpenChange, categories, editingCate
             setIsLoading(false)
         }
     }
+
+    const handleRemoveImage = () => {
+        setFile(null)
+        setPreviewUrl(null)
+        setRemoveImage(true)
+    }
+
 
     const fetchCategoryOptions = useCallback(async (search: string): Promise<Option[]> => {
         try {
@@ -204,30 +215,48 @@ export function CategoryFormDialog({ open, onOpenChange, categories, editingCate
 
                     <div className="space-y-2">
                         <Label>Category Image</Label>
-                        <div className="flex items-center space-x-4">
-                            <label
-                                htmlFor="image-upload"
-                                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
-                            >
-                                <Upload className="mr-2 h-4 w-4" />
-                                {file ? "Change Image" : "Upload Image"}
-                            </label>
-                            <input
-                                id="image-upload"
-                                type="file"
-                                accept="image/jpeg,image/png"
-                                className="hidden"
-                                onChange={handleFileChange}
-                                disabled={isLoading}
-                            />
-                        </div>
-                        {errors.imageFile && <p className="text-sm text-red-600">{errors.imageFile}</p>}
-                        {previewUrl && (
-                            <div className="mt-2 w-28 h-28 relative rounded-md overflow-hidden bg-gray-100">
-                                <img src={previewUrl} alt="Preview" className="object-cover w-full h-full" />
+                        {previewUrl ? (
+                            <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                                <img
+                                    src={previewUrl}
+                                    alt="Preview"
+                                    className="object-cover w-full h-full"
+                                />
+
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute top-2 right-2"
+                                    onClick={handleRemoveImage}
+                                    disabled={isLoading}
+                                >
+                                    <Trash2 className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => document.getElementById("image-upload")?.click()}
+                                    disabled={isLoading}
+                                >
+                                    <Upload className="mr-2 h-4 w-4" /> Upload Image
+                                </Button>
+                                <input
+                                    id="image-upload"
+                                    type="file"
+                                    accept="image/jpeg,image/png"
+                                    className="hidden"
+                                    onChange={handleFileChange}
+                                    disabled={isLoading}
+                                />
+                                {errors.imageFile && <p className="text-sm text-red-600">{errors.imageFile}</p>}
                             </div>
                         )}
                     </div>
+
                 </div>
 
                 <DialogFooter className="flex justify-end space-x-2">
