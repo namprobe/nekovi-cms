@@ -154,7 +154,11 @@ export interface ProductResponse {
   isPreOrder: boolean
   preOrderReleaseDate?: Date
   images?: { imagePath: string; isPrimary: boolean }[]
-  productTags?: { tag: { name: string } }[]
+  productTags?: {
+    tagId: string
+    tag: { id: string; name: string }
+  }[]
+
   reviews?: { rating: number; title?: string; comment?: string; userName?: string }[]
   events?: { name: string; startDate: Date; endDate: Date; imagePath?: string }[]
   totalSales: number
