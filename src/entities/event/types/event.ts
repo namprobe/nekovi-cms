@@ -56,3 +56,23 @@ export interface PaginatedEventList {
   page: number
   pageSize: number
 }
+
+export interface EventResponse {
+  id: string
+  name: string
+  description?: string
+  startDate: Date
+  endDate: Date
+  location: string
+  status: number
+  imagePath?: string
+  products?: {
+    id: string
+    name: string
+    price: number
+    stockQuantity: number
+    primaryImage?: string
+    status: number
+    category?: { name: string }
+  }[]
+}
