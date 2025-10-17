@@ -43,11 +43,12 @@ export const ROUTES = {
   COUPON_CREATE: "/dashboard/marketing/coupons/create",
   BADGES: "/dashboard/marketing/badges",
   BADGE_DETAIL: (id: string) => `/dashboard/marketing/badges/${id}`,
+  BADGE_EDIT: (id: string) => `/dashboard/marketing/badges/${id}/edit`,
   BADGE_CREATE: "/dashboard/marketing/badges/create",
 
   // Reports
   REPORTS: "/dashboard/reports",
-
+  
   // Settings
   SETTINGS: "/dashboard/settings",
   PROFILE: "/dashboard/profile",
