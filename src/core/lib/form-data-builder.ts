@@ -23,6 +23,42 @@ interface FormDataOptions {
   dateFormat?: "iso" | "date-only" | "datetime-local"
 }
 
+
+// Thêm function này vào file
+export function buildUpdateUserFormData(payload: {
+  firstName: string
+  lastName: string
+  email?: string
+  phoneNumber?: string
+  roleIds: string[]
+  status: number
+  avatarFile?: File | null
+}): FormData {
+  const fd = new FormData()
+  
+  // Required fields
+  fd.append("FirstName", payload.firstName)
+  fd.append("LastName", payload.lastName)
+  fd.append("Status", payload.status.toString())
+  
+  // Optional fields
+  if (payload.email) fd.append("Email", payload.email)
+  if (payload.phoneNumber) fd.append("PhoneNumber", payload.phoneNumber)
+  
+  // Role IDs - append từng cái một
+  payload.roleIds.forEach(roleId => {
+    fd.append("RoleIds", roleId)
+  })
+  
+  // Avatar file
+  if (payload.avatarFile) {
+    fd.append("AvatarPath", payload.avatarFile)
+  }
+
+  return fd
+}
+
+
 /**
  * Build FormData từ object với support cho files
  */
@@ -172,3 +208,32 @@ export function logFormData(formData: FormData, label = "FormData"): void {
   }
   console.groupEnd()
 }
+
+
+// ...existing code...
+export function buildCreateUserFormData(payload: {
+  email: string
+  firstName: string
+  lastName: string
+  phoneNumber?: string | null
+  password: string
+  roleIds: string[]
+  avatarFile?: File | null
+  status?: number | null
+}): FormData {
+  const fd = new FormData()
+  fd.append("Email", payload.email ?? "")
+  fd.append("FirstName", payload.firstName ?? "")
+  fd.append("LastName", payload.lastName ?? "")
+  fd.append("PhoneNumber", payload.phoneNumber ?? "")
+  fd.append("Password", payload.password ?? "")
+  ;(payload.roleIds ?? []).forEach((r) => fd.append("RoleIds", r))
+  if (payload.avatarFile) {
+    fd.append("AvatarPath", payload.avatarFile)
+  } else {
+    fd.append("AvatarPath", "") // send empty value per swagger
+  }
+  fd.append("Status", payload.status != null ? String(payload.status) : "")
+  return fd
+}
+// ...existing code...

@@ -61,18 +61,6 @@ export interface UserAddress extends BaseEntity {
   user?: User
 }
 
-export interface UserAction extends BaseEntity {
-  userId: string
-  action: UserAction
-  entityId?: string
-  entityName: string
-  oldValue?: string
-  newValue?: string
-  ipAddress?: string
-  actionDetail?: string
-  user?: User
-}
-
 // DTOs for API
 export interface CreateUserDto {
   firstName: string
@@ -82,6 +70,8 @@ export interface CreateUserDto {
   phoneNumber?: string
   password: string
   roleIds: string[]
+
+  status: number
 }
 
 export interface UpdateUserDto {
@@ -101,4 +91,51 @@ export interface UserListItem {
   status: number
   roles: string[]
   avatarPath?: string
+}
+
+// For API responses
+// trong /entities/users/types/user.ts
+export interface UserResponse {
+  id: string
+  firstName: string
+  lastName: string
+  userName: string
+  email: string
+  emailConfirmed: boolean
+  phoneNumber?: string
+  phoneNumberConfirmed: boolean
+  lastLoginAt?: Date
+  joiningAt: Date
+  avatarPath?: string
+  twoFactorEnabled: boolean
+  lockoutEnd?: Date
+  lockoutEnabled: boolean
+  accessFailedCount: number
+  status?: number
+  // roles: Role[]
+  customerProfile?: CustomerProfile
+  staffProfile?: StaffProfile
+  addresses?: UserAddress[]
+}
+
+
+// Trong /entities/users/types/user.ts
+export interface UpdateUserPayload {
+  firstName: string
+  lastName: string
+  email?: string | null  // ✅ Cho phép cả undefined và null
+  phoneNumber?: string | null
+  roleIds: string[]
+  status: number
+  avatarPath?: string | null
+}
+
+export interface UpdateUserRequest {
+  firstName: string
+  lastName: string
+  email?: string | null  // ✅ Cho phép cả undefined và null
+  phoneNumber?: string | null
+  avatarPath?: string | null
+  roleIds: string[]
+  status: number
 }

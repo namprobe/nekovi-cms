@@ -26,6 +26,8 @@ const routeLabels: Record<string, string> = {
   settings: "Settings",
   create: "Create",
   categories: "Categories",
+    coupons: "Coupons",
+
 }
 
 export function Breadcrumb() {
