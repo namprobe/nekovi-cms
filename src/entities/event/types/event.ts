@@ -1,53 +1,78 @@
+//src/entities/event/types/event.ts
 import type { BaseEntity } from "@/shared/types/common"
 
 export interface Event extends BaseEntity {
-  title: string
+  name: string
   description: string
   startDate: Date
   endDate: Date
   location: string
-  maxAttendees: number
-  currentAttendees: number
-  ticketPrice: number
   isActive: boolean
   featuredImagePath?: string
 }
 
 export interface EventListItem {
   id: string
-  title: string
+  name: string
   description: string
   startDate: Date
   endDate?: Date
   location: string
-  maxAttendees: number
-  currentAttendees: number
-  ticketPrice: number
   isActive: boolean
-  featuredImagePath?: string
+  imagePath?: string
   status: number
 }
 
 export interface CreateEventDto {
-  title: string
+  name: string
   description: string
   startDate: Date
   endDate: Date
   location: string
-  maxAttendees: number
-  ticketPrice: number
   isActive: boolean
-  featuredImagePath?: string
+  imagePath?: string
 }
 
 export interface UpdateEventDto {
-  title?: string
+  name: string
   description?: string
-  startDate?: Date
-  endDate?: Date
+  startDate: Date
+  endDate: Date
   location?: string
-  maxAttendees?: number
-  ticketPrice?: number
   isActive?: boolean
-  featuredImagePath?: string
+  imagePath?: string
+}
+
+export interface EventFilter {
+  search?: string
+  status?: "all" | "active" | "inactive"
+  page?: number
+  pageSize?: number
+}
+
+export interface PaginatedEventList {
+  items: EventListItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface EventResponse {
+  id: string
+  name: string
+  description?: string
+  startDate: Date
+  endDate: Date
+  location: string
+  status: number
+  imagePath?: string
+  products?: {
+    id: string
+    name: string
+    price: number
+    stockQuantity: number
+    primaryImage?: string
+    status: number
+    category?: { name: string }
+  }[]
 }

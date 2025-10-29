@@ -1,3 +1,4 @@
+//src/features/products/components/product-list.tsx
 "use client"
 
 import { useState, useEffect } from "react"

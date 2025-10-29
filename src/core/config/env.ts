@@ -46,13 +46,25 @@ export const env = {
             UPLOAD_IMAGE: `${CMS_PREFIX}/product-image`, // POST upload ảnh
         },
         CATEGORY: {
-            SELECT_LIST: `/categories/select-list`
+            SELECT_LIST: `/categories/select-list`,
+            LIST: `/categories`,
+            DETAIL: (id: string) => `/categories/${id}`,
+            CREATE: `/categories`,   // POST tạo mới
+            UPDATE: (id: string) => `/categories/${id}`, // PUT/PATCH
+            DELETE: (id: string) => `/categories/${id}`, // DELETE
         },
         ANIME: {
             SELECT_LIST: `/anime-series/select-list`
         },
         TAG: {
             SELECT_LIST: `/tags/select-list`,
+        },
+        EVENT: {
+            LIST: `/events`,
+            DETAIL: (id: string) => `/events/${id}`,
+            CREATE: `/events`,
+            UPDATE: (id: string) => `/events/${id}`,
+            DELETE: (id: string) => `/events/${id}`,
         },
 
     }

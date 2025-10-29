@@ -1,5 +1,6 @@
 // src/entities/products/types/product.ts
 import type { BaseEntity } from "@/shared/types/common"
+import type { Category } from "@/entities/categories/types/category"
 
 export interface Product extends BaseEntity {
   name: string
@@ -23,15 +24,7 @@ export interface Product extends BaseEntity {
   status: number
 }
 
-export interface Category extends BaseEntity {
-  name: string
-  description: string
-  parentCategoryId?: string
-  imagePath?: string
-  parentCategory?: Category
-  subCategories?: Category[]
-  products?: Product[]
-}
+
 
 export interface AnimeSeries extends BaseEntity {
   title: string
@@ -161,7 +154,11 @@ export interface ProductResponse {
   isPreOrder: boolean
   preOrderReleaseDate?: Date
   images?: { imagePath: string; isPrimary: boolean }[]
-  productTags?: { tag: { name: string } }[]
+  productTags?: {
+    tagId: string
+    tag: { id: string; name: string }
+  }[]
+
   reviews?: { rating: number; title?: string; comment?: string; userName?: string }[]
   events?: { name: string; startDate: Date; endDate: Date; imagePath?: string }[]
   totalSales: number

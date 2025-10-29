@@ -1,3 +1,4 @@
+//src/features/products/components/view-product-detail.tsx
 "use client"
 
 import { useEffect } from "react"

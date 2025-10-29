@@ -1,3 +1,4 @@
+//src/shared/types/common.ts
 export interface BaseEntity {
   id: string
   createdAt: Date
@@ -113,34 +114,34 @@ export interface FormState {
 export enum ErrorCodeEnum {
   // Success
   Success = 0,
-  
+
   // Authentication & Authorization (401, 403)
   Unauthorized = 1001,
   Forbidden = 1002,
   InvalidCredentials = 1003,
   TokenExpired = 1004,
   InvalidToken = 1005,
-  
+
   // Validation & Bad Request (400)
   ValidationFailed = 2001,
   InvalidInput = 2002,
   DuplicateEntry = 2003,
   InvalidOperation = 2004,
   TooManyRequests = 2005,
-  
+
   // Not Found (404)
   NotFound = 3001,
-  
+
   // Business Logic Errors (422)
   BusinessRuleViolation = 4001,
   InsufficientPermissions = 4002,
   ResourceConflict = 4003,
-  
+
   // Internal Server Errors (500)
   InternalError = 5001,
   DatabaseError = 5002,
   ExternalServiceError = 5003,
-  
+
   // File & Storage Errors
   FileUploadFailed = 6001,
   FileNotFound = 6002,
@@ -152,7 +153,7 @@ export enum ErrorCodeEnum {
 // HTTP Status Code Helper
 export function getHttpStatusFromErrorCode(errorCode: string): number {
   const code = parseInt(errorCode) as ErrorCodeEnum;
-  
+
   switch (code) {
     // 400 Bad Request
     case ErrorCodeEnum.ValidationFailed:
@@ -162,33 +163,33 @@ export function getHttpStatusFromErrorCode(errorCode: string): number {
     case ErrorCodeEnum.InvalidFileType:
     case ErrorCodeEnum.FileSizeTooLarge:
       return 400;
-      
+
     // 401 Unauthorized
     case ErrorCodeEnum.Unauthorized:
     case ErrorCodeEnum.InvalidCredentials:
     case ErrorCodeEnum.TokenExpired:
     case ErrorCodeEnum.InvalidToken:
       return 401;
-      
+
     // 403 Forbidden
     case ErrorCodeEnum.Forbidden:
     case ErrorCodeEnum.InsufficientPermissions:
       return 403;
-      
+
     // 404 Not Found
     case ErrorCodeEnum.NotFound:
     case ErrorCodeEnum.FileNotFound:
       return 404;
-      
+
     // 422 Unprocessable Entity
     case ErrorCodeEnum.BusinessRuleViolation:
     case ErrorCodeEnum.ResourceConflict:
       return 422;
-      
+
     // 429 Too Many Requests
     case ErrorCodeEnum.TooManyRequests:
       return 429;
-      
+
     // 500 Internal Server Error
     case ErrorCodeEnum.InternalError:
     case ErrorCodeEnum.DatabaseError:
@@ -196,7 +197,7 @@ export function getHttpStatusFromErrorCode(errorCode: string): number {
     case ErrorCodeEnum.FileUploadFailed:
     case ErrorCodeEnum.StorageError:
       return 500;
-      
+
     default:
       return 500;
   }
