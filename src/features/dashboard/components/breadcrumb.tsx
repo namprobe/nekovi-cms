@@ -1,11 +1,14 @@
+// src/features/dashboard/components/breadcrumb.tsx
 "use client"
 
 import React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useProductDetail } from "@/features/products/hooks/use-products"
 import { ChevronRight, Home } from "lucide-react"
 import { ROUTES } from "@/core/config/routes"
+import { useEventDetail } from "@/features/marketing/hooks/use-events"
 
 interface BreadcrumbItem {
   label: string
@@ -23,13 +26,22 @@ const routeLabels: Record<string, string> = {
   settings: "Settings",
   create: "Create",
   categories: "Categories",
+    coupons: "Coupons",
+
 }
 
 export function Breadcrumb() {
   const pathname = usePathname()
+  const segments = pathname.split("/").filter(Boolean)
+  // get product id from url if exists
+  const productId = segments.length > 2 && segments[1] === "products" ? segments[2] : undefined
+  const { item: product, loading: productLoading } = useProductDetail(productId)
+  // get event id from url if exists
+  const eventId = segments.length > 2 && segments[1] === "events" ? segments[2] : undefined
+  const { item: event, loading: eventLoading } = useEventDetail(eventId)
+
 
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
-    const segments = pathname.split("/").filter(Boolean)
     const breadcrumbs: BreadcrumbItem[] = []
 
     // Always start with Dashboard
@@ -44,7 +56,17 @@ export function Breadcrumb() {
       // Skip the first 'dashboard' segment as we already added it
       if (segment === "dashboard") continue
 
-      const label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+      let label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+
+      // Replace ID with entity name if available
+      if (i === 2) {
+        if (segments[1] === "products" && product && !productLoading) {
+          label = product.name || label
+        } else if (segments[1] === "events" && event && !eventLoading) {
+          label = event.name || label
+        }
+      }
+
 
       // Don't add href for the last segment (current page)
       const isLast = i === segments.length - 1

@@ -1,36 +1,26 @@
-import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
-import { UserForm } from "@/features/auth/components/user-form"
+// src/app/(dashboard)/dashboard/users/[id]/page.tsx
+"use client"
 
-interface UserDetailPageProps {
+import { use } from "react"
+import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
+import { ViewUserDetail } from "@/features/user/components/view-user-detail"
+
+interface UserViewPageProps {
   params: Promise<{
     id: string
   }>
 }
 
-export default async function UserDetailPage({ params }: UserDetailPageProps) {
-  const { id } = await params
-  // TODO: Fetch user data based on params.id
-  console.log('User ID:', id) // Temporarily use id to avoid ESLint warning
-  const mockUserData = {
-    firstName: "John",
-    lastName: "Doe",
-    userName: "johndoe",
-    email: "john.doe@example.com",
-    phoneNumber: "+1234567890",
-    roleIds: ["2"], // Admin role
-  }
+export default function UserViewPage({ params }: UserViewPageProps) {
+  const { id } = use(params)
 
   return (
     <div>
       <Breadcrumb />
-
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Edit User</h1>
-          <p className="text-muted-foreground">Update user information and permissions.</p>
-        </div>
-
-        <UserForm initialData={mockUserData} isEditing={true} />
+        <h1 className="text-3xl font-bold text-foreground">User Detail</h1>
+        <p className="text-muted-foreground">View user information and related details.</p>
+        <ViewUserDetail userId={id} />
       </div>
     </div>
   )

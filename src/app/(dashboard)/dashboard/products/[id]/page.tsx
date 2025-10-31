@@ -1,40 +1,26 @@
-import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
-import { ProductForm } from "@/features/products/components/product-form"
+// src/app/(dashboard)/products/[id]/page.tsx
+"use client"
 
-interface ProductDetailPageProps {
+import { use } from "react"
+import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
+import { ViewProductDetail } from "@/features/products/components/view-product-detail"
+
+interface ProductViewPageProps {
   params: Promise<{
     id: string
   }>
 }
 
-export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
-  const { id } = await params
-  // TODO: Fetch product data based on params.id
-  console.log('Product ID:', id) // Temporarily use id to avoid ESLint warning
-  const mockProductData = {
-    name: "Naruto Uzumaki Figure",
-    description: "High-quality Naruto figure with detailed craftsmanship",
-    price: 29.99,
-    discountPrice: 24.99,
-    stockQuantity: 15,
-    categoryId: "1",
-    animeSeriesId: "1",
-    isPreOrder: false,
-    images: ["/naruto-figure.jpg"],
-    tagIds: ["1", "4"], // Popular, Best Seller
-  }
+export default function ProductViewPage({ params }: ProductViewPageProps) {
+  const { id } = use(params)
 
   return (
     <div>
       <Breadcrumb />
-
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Edit Product</h1>
-          <p className="text-muted-foreground">Update product information and settings.</p>
-        </div>
-
-        <ProductForm initialData={mockProductData} isEditing={true} />
+        <h1 className="text-3xl font-bold text-foreground">Product Detail</h1>
+        <p className="text-muted-foreground">View product information and related details.</p>
+        <ViewProductDetail productId={id} />
       </div>
     </div>
   )

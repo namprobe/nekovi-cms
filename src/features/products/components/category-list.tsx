@@ -1,115 +1,55 @@
 "use client"
-
 import { useState, useEffect } from "react"
-// import { useRouter } from "next/navigation" // TODO: Will be used for navigation
-import Image from "next/image"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Badge } from "@/shared/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/shared/ui/dialog"
-import { Label } from "@/shared/ui/label"
-import { Textarea } from "@/shared/ui/textarea"
-import type { Category } from "@/entities/products/types/product"
 import { STATUS_VARIANTS } from "@/core/config/constants"
 import { Search, Plus, MoreHorizontal, Edit, Trash2 } from "lucide-react"
-
-// Mock data - replace with actual API call
-const mockCategories: Category[] = [
-  {
-    id: "1",
-    name: "Figures",
-    description: "Action figures and collectible figures",
-    parentCategoryId: undefined,
-    imagePath: "/anime-figures.jpg",
-    createdAt: new Date(),
-    createdBy: "admin",
-    updatedAt: new Date(),
-    updatedBy: "admin",
-    isDeleted: false,
-    status: 1,
-  },
-  {
-    id: "2",
-    name: "Nendoroids",
-    description: "Cute chibi-style figures",
-    parentCategoryId: "1",
-    imagePath: "/nendoroid.jpg",
-    createdAt: new Date(),
-    createdBy: "admin",
-    updatedAt: new Date(),
-    updatedBy: "admin",
-    isDeleted: false,
-    status: 1,
-  },
-  {
-    id: "3",
-    name: "Statues",
-    description: "High-quality collectible statues",
-    parentCategoryId: undefined,
-    imagePath: "/anime-statue.jpg",
-    createdAt: new Date(),
-    createdBy: "admin",
-    updatedAt: new Date(),
-    updatedBy: "admin",
-    isDeleted: false,
-    status: 1,
-  },
-  {
-    id: "4",
-    name: "Posters",
-    description: "Anime posters and wall art",
-    parentCategoryId: undefined,
-    imagePath: "/anime-poster.png",
-    createdAt: new Date(),
-    createdBy: "admin",
-    updatedAt: new Date(),
-    updatedBy: "admin",
-    isDeleted: false,
-    status: 0,
-  },
-]
+import { categoryService } from "@/entities/categories/services/category"
+import type { Category } from "@/entities/categories/types/category"
+import { CategoryFormDialog } from "./category-form-dialog"
+import { useToast } from "@/hooks/use-toast"
 
 export function CategoryList() {
-  // const router = useRouter() // TODO: Will be used for navigation
+  const { toast } = useToast()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    parentCategoryId: "",
-  })
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCategories(mockCategories)
+  // 🧩 Thêm các state cho phân trang
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+  const [total, setTotal] = useState(0)
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true)
+      const response = await categoryService.getCategories({
+        page,
+        limit,
+        search: searchTerm,
+      })
+
+      // ✅ Đảm bảo phản hồi có cấu trúc { items, total }
+      setCategories(response.items || [])
+      setTotal(response.totalItems || 0)
+    } catch (error: any) {
+      console.error("Failed to load categories:", error)
+      toast({ title: "Error", description: error.message || "Failed to load categories", variant: "destructive" })
+    } finally {
       setLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }
 
+  // Gọi API khi page, limit, hoặc searchTerm thay đổi
   useEffect(() => {
-    const filtered = categories.filter(
-      (category) =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        category.description.toLowerCase().includes(searchTerm.toLowerCase()),
-    )
-    setFilteredCategories(filtered)
-  }, [categories, searchTerm])
+    fetchCategories()
+  }, [page, limit, searchTerm])
 
   const getStatusBadge = (status: number) => {
     const statusText = status === 1 ? "Active" : status === 0 ? "Inactive" : "Pending"
@@ -122,26 +62,43 @@ export function CategoryList() {
     return parent ? parent.name : "-"
   }
 
-  const handleCreateCategory = () => {
+  const handleCreate = () => {
     setEditingCategory(null)
-    setFormData({ name: "", description: "", parentCategoryId: "" })
     setIsDialogOpen(true)
   }
 
-  const handleEditCategory = (category: Category) => {
+  const handleEdit = (category: Category) => {
     setEditingCategory(category)
-    setFormData({
-      name: category.name,
-      description: category.description,
-      parentCategoryId: category.parentCategoryId || "",
-    })
     setIsDialogOpen(true)
   }
 
-  const handleSaveCategory = async () => {
-    // TODO: Implement API call
-    console.log("Saving category:", formData)
-    setIsDialogOpen(false)
+  const handleDelete = async (categoryId: string) => {
+    if (!confirm("Are you sure you want to delete this category?")) return
+    try {
+      await categoryService.deleteCategory(categoryId)
+      toast({ title: "Success", description: "Category deleted successfully" })
+      await fetchCategories()
+    } catch (error: any) {
+      console.error(error)
+      toast({ title: "Error", description: error.message || "Failed to delete category", variant: "destructive" })
+    }
+  }
+
+  const handleSave = async (formData: FormData, isEdit: boolean, id?: string) => {
+    try {
+      if (isEdit && id) {
+        await categoryService.updateCategory(id, formData)
+        toast({ title: "Success", description: "Category updated successfully" })
+      } else {
+        await categoryService.createCategory(formData)
+        toast({ title: "Success", description: "Category created successfully" })
+      }
+      setIsDialogOpen(false)
+      await fetchCategories()
+    } catch (error: any) {
+      console.error(error)
+      toast({ title: "Error", description: error.message || "Failed to save category", variant: "destructive" })
+    }
   }
 
   if (loading) {
@@ -161,78 +118,27 @@ export function CategoryList() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Categories</CardTitle>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleCreateCategory}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Category
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{editingCategory ? "Edit Category" : "Create Category"}</DialogTitle>
-                <DialogDescription>
-                  {editingCategory
-                    ? "Update the category information."
-                    : "Add a new product category to organize your products."}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="parentCategory">Parent Category</Label>
-                  <select
-                    id="parentCategory"
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    value={formData.parentCategoryId}
-                    onChange={(e) => setFormData({ ...formData, parentCategoryId: e.target.value })}
-                  >
-                    <option value="">No parent (Top level)</option>
-                    {categories
-                      .filter((cat) => cat.id !== editingCategory?.id)
-                      .map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" onClick={handleSaveCategory}>
-                  {editingCategory ? "Update" : "Create"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={handleCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Add Category
+          </Button>
         </div>
-        <div className="flex items-center space-x-2">
+
+        <div className="flex items-center space-x-2 mt-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               placeholder="Search categories..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setPage(1) // reset page khi tìm kiếm mới
+                setSearchTerm(e.target.value)
+              }}
               className="pl-10"
             />
           </div>
         </div>
       </CardHeader>
+
       <CardContent>
         <Table>
           <TableHeader>
@@ -241,20 +147,19 @@ export function CategoryList() {
               <TableHead>Description</TableHead>
               <TableHead>Parent Category</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCategories.map((category) => (
+            {categories.map((category) => (
               <TableRow key={category.id}>
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-muted">
-                      <Image
+                      <img
                         src={category.imagePath || "/placeholder.svg"}
                         alt={category.name}
-                        fill
-                        className="object-cover"
+                        className="object-cover w-full h-full"
                       />
                     </div>
                     <div className="font-medium">{category.name}</div>
@@ -273,11 +178,11 @@ export function CategoryList() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEditCategory(category)}>
+                      <DropdownMenuItem onClick={() => handleEdit(category)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(category.id)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -289,12 +194,35 @@ export function CategoryList() {
           </TableBody>
         </Table>
 
-        {filteredCategories.length === 0 && (
+        {categories.length === 0 && (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No categories found</p>
           </div>
         )}
+
+        {/* ✅ Thêm phân trang giống product-list */}
+        <div className="mt-4 flex justify-between items-center">
+          <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            Prev
+          </Button>
+          <span>
+            Page {page} of {Math.ceil(total / limit) || 1}
+          </span>
+          <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)}>
+            Next
+          </Button>
+        </div>
       </CardContent>
+
+      {isDialogOpen && (
+        <CategoryFormDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          categories={categories}
+          editingCategory={editingCategory}
+          onSave={handleSave}
+        />
+      )}
     </Card>
   )
 }

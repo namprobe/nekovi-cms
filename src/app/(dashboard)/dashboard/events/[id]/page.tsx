@@ -1,32 +1,29 @@
-import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
-import { EventForm } from "@/features/marketing/components/event-form"
+// src/app/(dashboard)/events/[id]/page.tsx
+"use client"
 
-interface EventDetailPageProps {
-  params: Promise<{
-    id: string
-  }>
+import { use } from "react"
+import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
+import EventDetail from "@/features/marketing/components/event-detail"
+
+interface EventViewPageProps {
+    params: Promise<{
+        id: string
+    }>
 }
 
-export default async function EventDetailPage({ params }: EventDetailPageProps) {
-  const { id } = await params
-  // TODO: Fetch event data by ID
-  console.log('Event ID:', id) // Temporarily use id to avoid ESLint warning
-  const mockEventData = {
-    title: "Anime Expo 2024",
-    description: "The biggest anime convention in North America",
-    startDate: new Date("2024-07-04T09:00:00Z"),
-    endDate: new Date("2024-07-07T18:00:00Z"),
-    location: "Los Angeles Convention Center",
-    maxAttendees: 5000,
-    ticketPrice: 75.0,
-    isActive: true,
-    featuredImagePath: "/anime-expo.jpg",
-  }
+export default function EventViewPage({ params }: EventViewPageProps) {
+    const { id } = use(params)
 
-  return (
-    <div>
-      <Breadcrumb />
-      <EventForm initialData={mockEventData} isEditing={true} />
-    </div>
-  )
+    return (
+        <div>
+            <Breadcrumb />
+            <div className="space-y-6">
+                <h1 className="text-3xl font-bold text-foreground">Event Detail</h1>
+                <p className="text-muted-foreground">
+                    View event information and products included in this event.
+                </p>
+                <EventDetail eventId={id} />
+            </div>
+        </div>
+    )
 }

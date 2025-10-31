@@ -1,5 +1,5 @@
 import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
-import { ProductList } from "@/features/products/components/product-list"
+import ProductList from "@/features/products/components/product-list"
 
 export default function ProductsPage() {
   return (

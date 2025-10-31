@@ -9,13 +9,16 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
 
   // User management
-  USERS: "/dashboard/users",
+   USERS: "/dashboard/users",
+  USER_CREATE: "/dashboard/users/create", 
   USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
-  USER_CREATE: "/dashboard/users/create",
+  USER_EDIT: (id: string) => `/dashboard/users/${id}/edit`,
+
 
   // Product management
   PRODUCTS: "/dashboard/products",
   PRODUCT_DETAIL: (id: string) => `/dashboard/products/${id}`,
+  PRODUCT_EDIT: (id: string) => `/dashboard/products/${id}/edit`,
   PRODUCT_CREATE: "/dashboard/products/create",
   CATEGORIES: "/dashboard/categories",
 
@@ -31,6 +34,7 @@ export const ROUTES = {
   // Event management
   EVENTS: "/dashboard/events",
   EVENT_DETAIL: (id: string) => `/dashboard/events/${id}`,
+  EVENT_EDIT: (id: string) => `/dashboard/events/${id}/edit`,
   EVENT_CREATE: "/dashboard/events/create",
 
   // Marketing
@@ -40,11 +44,12 @@ export const ROUTES = {
   COUPON_CREATE: "/dashboard/marketing/coupons/create",
   BADGES: "/dashboard/marketing/badges",
   BADGE_DETAIL: (id: string) => `/dashboard/marketing/badges/${id}`,
+  BADGE_EDIT: (id: string) => `/dashboard/marketing/badges/${id}/edit`,
   BADGE_CREATE: "/dashboard/marketing/badges/create",
 
   // Reports
   REPORTS: "/dashboard/reports",
-
+  
   // Settings
   SETTINGS: "/dashboard/settings",
   PROFILE: "/dashboard/profile",
