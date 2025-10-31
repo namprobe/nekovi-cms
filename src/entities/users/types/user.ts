@@ -112,7 +112,7 @@ export interface UserResponse {
   lockoutEnabled: boolean
   accessFailedCount: number
   status?: number
-  // roles: Role[]
+  roles?: Role[]
   customerProfile?: CustomerProfile
   staffProfile?: StaffProfile
   addresses?: UserAddress[]

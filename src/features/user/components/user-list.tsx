@@ -153,11 +153,10 @@ export default function UserList() {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {/* SỬA Ở ĐÂY - Giả sử roles là array of objects với property 'name' */}
                     {user.roles.map((role, index) => (
-                      <Badge key={typeof role === 'object' ? role.id : index} 
+                      <Badge key={index} 
                         variant="outline" className="text-xs">
-                        {typeof role === 'object' ? role.name : role}
+                        {role}
                       </Badge>
                     ))}
                   </div>
