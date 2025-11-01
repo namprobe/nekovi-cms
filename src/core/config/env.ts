@@ -72,7 +72,16 @@ export const env = {
             CREATE: `/blog-posts`,
             UPDATE: (id: string) => `/blog-posts/${id}`,
             DELETE: (id: string) => `/blog-posts/${id}`,
-        }
+        },
+        // env.ts
+        POST_CATEGORY: {
+            SELECT_LIST: `/post-categories/select-list`,
+            LIST: `/post-categories`,
+            DETAIL: (id: string) => `/post-categories/${id}`,
+            CREATE: `/post-categories`,
+            UPDATE: (id: string) => `/post-categories/${id}`,
+            DELETE: (id: string) => `/post-categories/${id}`,
+        },
     }
 } as const;
 

@@ -20,10 +20,12 @@ export interface BlogPostListItem {
     id: string
     title: string
     authorName?: string
-    postCategoryName?: string
+    postCategory?: {
+        name: string
+    } // ← từ backend: PostCategoryItem
     publishDate: Date
     isPublished: boolean
-    featuredImage?: string // URL
+    featuredImage?: string
     status: number
     postTags: { tagId: string; tagName: string }[]
 }
