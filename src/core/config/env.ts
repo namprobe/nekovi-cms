@@ -66,7 +66,13 @@ export const env = {
             UPDATE: (id: string) => `/events/${id}`,
             DELETE: (id: string) => `/events/${id}`,
         },
-
+        BLOGPOST: {
+            LIST: `/blog-posts`,
+            DETAIL: (id: string) => `/blog-posts/${id}`,
+            CREATE: `/blog-posts`,
+            UPDATE: (id: string) => `/blog-posts/${id}`,
+            DELETE: (id: string) => `/blog-posts/${id}`,
+        }
     }
 } as const;
 
