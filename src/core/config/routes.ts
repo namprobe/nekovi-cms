@@ -28,6 +28,7 @@ export const ROUTES = {
   BLOG_POSTS: "/dashboard/blog",
   BLOG_POST_DETAIL: (id: string) => `/dashboard/blog/${id}`,
   BLOG_POST_CREATE: "/dashboard/blog/create",
+  BLOG_POST_EDIT: (id: string) => `/dashboard/blog/${id}/edit`,
 
   // Event management
   EVENTS: "/dashboard/events",

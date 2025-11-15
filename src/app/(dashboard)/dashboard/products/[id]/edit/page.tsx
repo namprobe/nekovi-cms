@@ -36,7 +36,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         productTags: product.productTags?.map((tag) => ({
             tagId: tag.tagId,
             tag: tag.tag ? { id: tag.tagId, name: tag.tag.name } : null
-        })) || [], // Thêm productTags
+        })) || [],
     }
 
     return (

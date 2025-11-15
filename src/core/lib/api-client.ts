@@ -1,3 +1,4 @@
+// src/core/lib/api-client.ts
 import { env } from "@/core/config/env"
 import type { ApiResult, PaginateResult } from "@/shared/types/common"
 
@@ -87,7 +88,7 @@ class ApiClient {
     //Gom phần còn lại (method, headers...) vào một object riêng (fetchOptions).
     const { timeout = 30000, retries = 1, ...fetchOptions } = options
     const url = `${this.baseURL}${endpoint}`
-    
+
     // Debug log for URL construction (remove in production)
     if (process.env.NODE_ENV === 'development') {
       console.log('🔗 API Request:', { baseURL: this.baseURL, endpoint, finalURL: url })
@@ -249,14 +250,14 @@ class ApiClient {
 
   // Core method for FormData requests
   private async requestFormData<T>(
-    endpoint: string, 
-    formData: FormData, 
+    endpoint: string,
+    formData: FormData,
     method: string,
     options: RequestOptions = {}
   ): Promise<ApiResult<T>> {
     const { timeout = 30000, retries = 1, ...fetchOptions } = options
     const url = `${this.baseURL}${endpoint}`
-    
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
@@ -281,7 +282,7 @@ class ApiClient {
       // Parse response
       let responseData: unknown
       const contentType = response.headers.get("content-type")
-      
+
       if (contentType && contentType.includes("application/json")) {
         responseData = await response.json()
       } else {
@@ -317,7 +318,7 @@ class ApiClient {
 
     } catch (error) {
       clearTimeout(timeoutId)
-      
+
       if (error instanceof DOMException && error.name === "AbortError") {
         return {
           isSuccess: false,
@@ -349,11 +350,11 @@ class ApiClient {
     }
     //build url with search params
     const url = searchParams.toString() ? `${endpoint}?${searchParams.toString()}` : endpoint
-    
+
     // Direct fetch vì backend trả về PaginateResult trực tiếp
     const { timeout = 30000, retries = 1, ...fetchOptions } = options || {}
     const fullUrl = `${this.baseURL}${url}`
-    
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
@@ -381,7 +382,7 @@ class ApiClient {
       // Parse response
       let responseData: unknown
       const contentType = response.headers.get("content-type")
-      
+
       if (contentType && contentType.includes("application/json")) {
         responseData = await response.json()
       } else {
@@ -410,7 +411,7 @@ class ApiClient {
 
     } catch (error) {
       clearTimeout(timeoutId)
-      
+
       return {
         isSuccess: false,
         items: [],
@@ -425,7 +426,7 @@ class ApiClient {
       }
     }
   }
-  
+
   // File upload with progress
   async uploadFile<T>(
     endpoint: string,
@@ -448,7 +449,7 @@ class ApiClient {
       xhr.addEventListener("load", async () => {
         try {
           const responseData = JSON.parse(xhr.responseText)
-          
+
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve({
               isSuccess: true,
@@ -483,7 +484,7 @@ class ApiClient {
       })
 
       xhr.open("POST", `${this.baseURL}${endpoint}`)
-      
+
       // Add auth header if available
       if (this.token) {
         xhr.setRequestHeader("Authorization", `Bearer ${this.token}`)

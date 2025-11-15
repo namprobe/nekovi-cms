@@ -7,7 +7,9 @@ import type {
     UpdateBlogPostDto,
     PaginatedBlogPostList,
     BlogPostFilter,
+    BlogPostDetailResponse,
 } from "./types/blog-post"
+import { ApiResult } from "@/shared/types/common"
 
 /**
  * blogPostService - wrapper cho tất cả endpoint /api/cms/blog-posts
@@ -38,8 +40,11 @@ export const blogPostService = {
     /**
      * Chi tiết 1 blog post theo id
      */
-    getBlogPostById: (id: string) =>
-        cmsApiClient.get<BlogPostListItem>(env.ENDPOINTS.BLOGPOST.DETAIL(id)),
+
+    getBlogPostById: (id: string): Promise<ApiResult<BlogPostDetailResponse>> =>
+        cmsApiClient.get<BlogPostDetailResponse>(  // ← CHỈ CẦN BlogPostDetailResponse
+            env.ENDPOINTS.BLOGPOST.DETAIL(id)
+        ),
 
     /**
      * Tạo blog post mới (FormData vì có ảnh)
@@ -58,4 +63,10 @@ export const blogPostService = {
      */
     deleteBlogPost: (id: string) =>
         cmsApiClient.delete(env.ENDPOINTS.BLOGPOST.DELETE(id)),
+
+    publishBlogPost: (id: string, isPublished: boolean): Promise<ApiResult<BlogPostDetailResponse>> => {
+        const formData = new FormData()
+        formData.append("isPublished", isPublished.toString())
+        return cmsApiClient.patchFormData(env.ENDPOINTS.BLOGPOST.PUBLISH(id), formData)
+    },
 }

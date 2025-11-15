@@ -9,6 +9,7 @@ import { useProductDetail } from "@/features/products/hooks/use-products"
 import { ChevronRight, Home } from "lucide-react"
 import { ROUTES } from "@/core/config/routes"
 import { useEventDetail } from "@/features/marketing/hooks/use-events"
+import { useBlogPostDetail } from "@/features/blog-post/hooks/use-blog-post-detail"
 
 interface BreadcrumbItem {
   label: string
@@ -37,6 +38,9 @@ export function Breadcrumb() {
   // get event id from url if exists
   const eventId = segments.length > 2 && segments[1] === "events" ? segments[2] : undefined
   const { item: event, loading: eventLoading } = useEventDetail(eventId)
+  // get blog post id from url if exists
+  const blogPostId = segments.length > 2 && segments[1] === "blog" ? segments[2] : undefined
+  const { item: blogPost, loading: blogPostLoading } = useBlogPostDetail(blogPostId)
 
 
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
@@ -62,6 +66,8 @@ export function Breadcrumb() {
           label = product.name || label
         } else if (segments[1] === "events" && event && !eventLoading) {
           label = event.name || label
+        } else if (segments[1] === "blog" && blogPost && !blogPostLoading) {
+          label = blogPost.title || label
         }
       }
 
