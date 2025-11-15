@@ -63,63 +63,8 @@ export function useAuth() {
         initializeAuth()
     }, [initializeAuth])
 
-     // Helper function: Check if token is expired
-     const isTokenExpired = (expiresAt: Date): boolean => {
-        try {
-            const expiryTime = new Date(expiresAt).getTime()
-            const currentTime = Date.now()
-            return currentTime >= expiryTime
-        } catch (error) {
-            console.error('Error parsing token expiry:', error)
-            return true // Treat parsing error as expired
-        }
-    }
-
-    // Helper function: Calculate milliseconds until refresh time (5 minutes before expiry)
-    const calculateRefreshTimeout = (expiresAt: Date): number => {
-        try {
-            const expiryTime = new Date(expiresAt).getTime()
-            const currentTime = Date.now()
-            const refreshTime = expiryTime - (5 * 60 * 1000) // 5 minutes before expiry
-            
-            const timeUntilRefresh = refreshTime - currentTime
-            
-            // Nếu đã quá thời gian refresh hoặc sắp expire, refresh ngay
-            return Math.max(timeUntilRefresh, 0)
-        } catch (error) {
-            console.error('Error calculating refresh timeout:', error)
-            return 0 // Refresh immediately on error
-        }
-    }
-
-    //Auto token refresh (option - impplement if needed)
-    useEffect(() => {
-        if (!isAuthenticated || !token) return
-        // Kiểm tra token đã expired chưa
-        if (isTokenExpired(accessTokenExpiresAt as Date)) {
-            console.log('Token already expired, logging out...')
-            logout()
-            return
-        }
-
-        // Calculate thời gian để refresh (5 phút trước khi expire)
-        const refreshTimeout = calculateRefreshTimeout(accessTokenExpiresAt as Date)
-
-        console.log(`Token refresh scheduled in ${Math.round(refreshTimeout / 1000 / 60)} minutes`)
-
-        // Setup timeout để refresh token
-        const timeoutId = setTimeout(async () => {
-            console.log('Attempting token refresh...')
-            const success = await refreshToken()
-            if (!success) {
-                console.error('Token refresh failed, logging out...')
-                await logout()
-            }
-        }, refreshTimeout)
-
-        // Cleanup timeout khi component unmount hoặc dependencies thay đổi
-        return () => clearTimeout(timeoutId)
-    }, [isAuthenticated, token, accessTokenExpiresAt, refreshToken, logout])
+    // Note: Token refresh scheduling is now handled in the Zustand store (auth.ts)
+    // to prevent multiple refresh calls when multiple components mount
 
     return {
         // State

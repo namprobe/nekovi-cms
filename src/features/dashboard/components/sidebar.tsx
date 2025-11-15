@@ -19,6 +19,9 @@ import {
   ChevronRight,
   Home,
   Tags,
+  icons,
+  Ticket,
+  Badge,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -75,8 +78,8 @@ const navigation = [
     href: ROUTES.MARKETING,
     icon: Tags,
     children: [
-      { name: "Coupons", href: ROUTES.COUPONS },
-      { name: "Badges", href: ROUTES.BADGES },
+      { name: "Coupons", href: ROUTES.COUPONS, icon: Ticket },
+      { name: "Badges", href: ROUTES.BADGES, icon: Badge },
     ],
   },
   {
@@ -166,7 +169,7 @@ export function Sidebar({ className }: SidebarProps) {
 
                 {hasChildren && isExpanded && !collapsed && (
                   <div className="ml-6 mt-2 space-y-1">
-                    {item.children?.map((child) => (
+                    {/* {item.children?.map((child) => (
                       <Button
                         key={child.href}
                         variant={isActive(child.href) ? "secondary" : "ghost"}
@@ -179,7 +182,27 @@ export function Sidebar({ className }: SidebarProps) {
                       >
                         <Link href={child.href}>{child.name}</Link>
                       </Button>
-                    ))}
+                    ))} */}
+                    {item.children?.map((child) => {
+                      const ChildIcon = (child as any).icon
+                      return (
+                        <Button
+                          key={child.href}
+                          variant={isActive(child.href) ? "secondary" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "w-full justify-start text-sm",
+                            isActive(child.href) && "bg-accent text-accent-foreground",
+                          )}
+                          asChild
+                        >
+                          <Link href={child.href} className="flex items-center">
+                            {ChildIcon && <ChildIcon className="h-3 w-3 mr-2" />}
+                            {child.name}
+                          </Link>
+                        </Button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
