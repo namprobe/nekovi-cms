@@ -1,3 +1,4 @@
+// src/app/(dashboard)/dashboard/categories/page.tsx
 import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
 import { CategoryList } from "@/features/products/components/category-list"
 

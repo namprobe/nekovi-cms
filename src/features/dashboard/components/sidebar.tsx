@@ -58,6 +58,7 @@ const navigation = [
     children: [
       { name: "All Posts", href: ROUTES.BLOG_POSTS },
       { name: "Create Post", href: ROUTES.BLOG_POST_CREATE },
+      { name: "Post Categories", href: ROUTES.POST_CATEGORIES },
     ],
   },
   {

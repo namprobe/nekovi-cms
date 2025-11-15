@@ -30,6 +30,12 @@ export const ROUTES = {
   BLOG_POST_CREATE: "/dashboard/blog/create",
   BLOG_POST_EDIT: (id: string) => `/dashboard/blog/${id}/edit`,
 
+  //POST CATEGORIES
+  POST_CATEGORIES: "/dashboard/post-categories",
+  POST_CATEGORY_CREATE: "/dashboard/post-categories/create",
+  POST_CATEGORY_DETAIL: (id: string) => `/dashboard/post-categories/${id}`,
+  POST_CATEGORY_EDIT: (id: string) => `/dashboard/post-categories/${id}/edit`,
+
   // Event management
   EVENTS: "/dashboard/events",
   EVENT_DETAIL: (id: string) => `/dashboard/events/${id}`,

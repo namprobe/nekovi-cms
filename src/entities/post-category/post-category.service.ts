@@ -2,6 +2,7 @@
 import { cmsApiClient } from "@/core/lib/api-client"
 import { env } from "@/core/config/env"
 import { SelectOption } from "@/shared/types/select"
+import type { PostCategoryItem } from "./types/post-category"
 
 interface PostCategorySelectItemDto {
     id: string
@@ -21,4 +22,20 @@ export const postCategoryService = {
             label: item.name
         }))
     },
+
+    getPostCategories: (params?: { page?: number; pageSize?: number; search?: string }) => {
+        return cmsApiClient.paginate<PostCategoryItem>(env.ENDPOINTS.POST_CATEGORY.LIST, params)
+    },
+
+    getPostCategoryById: (id: string) =>
+        cmsApiClient.get<PostCategoryItem>(env.ENDPOINTS.POST_CATEGORY.DETAIL(id)),
+
+    createPostCategory: (formData: FormData) =>
+        cmsApiClient.postFormData(env.ENDPOINTS.POST_CATEGORY.CREATE, formData),
+
+    updatePostCategory: (id: string, formData: FormData) =>
+        cmsApiClient.putFormData(env.ENDPOINTS.POST_CATEGORY.UPDATE(id), formData),
+
+    deletePostCategory: (id: string) =>
+        cmsApiClient.delete(env.ENDPOINTS.POST_CATEGORY.DELETE(id)),
 }

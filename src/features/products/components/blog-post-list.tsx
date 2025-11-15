@@ -69,6 +69,7 @@ export function BlogPostList() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const [publishingId, setPublishingId] = useState<string | null>(null)
   // Category hook
   const fetchCategoryOptions = usePostCategoryOptions()
 
@@ -179,19 +180,24 @@ export function BlogPostList() {
 
   // HANDLE TOGGLE PUBLISH
   const handleTogglePublish = async (postId: string, currentStatus: boolean) => {
+    if (publishingId === postId) return // Prevent double click
+
+    setPublishingId(postId)
     const newStatus = !currentStatus
 
     try {
       const result = await blogPostService.publishBlogPost(postId, newStatus)
       if (result.isSuccess) {
         toast.success(newStatus ? "Đã đăng bài" : "Đã hủy đăng")
-        fetchPosts() // refresh danh sách
+        fetchPosts() // refresh
       } else {
         toast.error(result.message || "Cập nhật thất bại")
       }
     } catch (err) {
       console.error("Publish error:", err)
       toast.error("Lỗi mạng")
+    } finally {
+      setPublishingId(null) // Luôn reset
     }
   }
 
@@ -363,9 +369,23 @@ export function BlogPostList() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleTogglePublish(post.id, post.isPublished)}
+                        disabled={publishingId === post.id}
+                        className="flex items-center justify-between"
                       >
-                        <Eye className="mr-2 h-4 w-4" />
-                        {post.isPublished ? "Unpublish" : "Publish"}
+                        <div className="flex items-center">
+                          {publishingId === post.id ? (
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                          ) : (
+                            <Eye className="mr-2 h-4 w-4" />
+                          )}
+                          <span>
+                            {publishingId === post.id
+                              ? "Đang xử lý..."
+                              : post.isPublished
+                                ? "Unpublish"
+                                : "Publish"}
+                          </span>
+                        </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-red-600"
