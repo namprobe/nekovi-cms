@@ -76,7 +76,13 @@ export function BlogPostList() {
   const fetchOptionsWithAll = useCallback(
     async (search: string): Promise<Option[]> => {
       const options = await fetchCategoryOptions(search)
-      return options
+
+      // Dùng "all" thay vì ""
+      const allOption: Option = { id: "all", label: "All Categories" }
+
+      const filteredOptions = options.filter(opt => opt.id !== "all") // tránh trùng
+
+      return [allOption, ...filteredOptions]
     },
     [fetchCategoryOptions]
   )
@@ -278,7 +284,7 @@ export function BlogPostList() {
           <div className="w-48">
             <AsyncSelect
               value={selectedCategoryId}
-              onChange={setSelectedCategoryId}
+              onChange={(val) => setSelectedCategoryId(val === "all" ? "" : val)}
               fetchOptions={fetchOptionsWithAll}
               placeholder="Category"
             />

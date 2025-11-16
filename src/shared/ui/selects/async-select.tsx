@@ -124,7 +124,6 @@ export function AsyncSelect({ value, onChange, fetchOptions, placeholder, disabl
                 </div>
 
                 <div className="async-select-scroll">
-                    <SelectItem value="all">All</SelectItem>
 
                     {options.map((option) => (
                         <SelectItem key={option.id} value={option.id}>
