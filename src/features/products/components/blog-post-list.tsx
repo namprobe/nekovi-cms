@@ -80,7 +80,7 @@ export function BlogPostList() {
       // Dùng "all" thay vì ""
       const allOption: Option = { id: "all", label: "All Categories" }
 
-      const filteredOptions = options.filter(opt => opt.id !== "all") // tránh trùng
+      const filteredOptions = options.filter(opt => opt.id !== "all")
 
       return [allOption, ...filteredOptions]
     },

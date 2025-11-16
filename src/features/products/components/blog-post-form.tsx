@@ -45,7 +45,7 @@ export function BlogPostForm({ initialData, isEditing = false }: BlogPostFormPro
     id: initialData?.id,
     title: initialData?.title || "",
     content: initialData?.content || "",
-    postCategoryId: initialData?.postCategoryId ?? "", // ← Fallback
+    postCategoryId: initialData?.postCategoryId ?? "",
     publishDate: initialData?.publishDate ? new Date(initialData.publishDate) : new Date(),
     isPublished: initialData?.isPublished ?? false,
     tagIds: initialData?.tagIds ?? [],
@@ -273,9 +273,9 @@ export function BlogPostForm({ initialData, isEditing = false }: BlogPostFormPro
                   <div className="space-y-2">
                     <Label>Category</Label>
                     <AsyncSelect
-                      value={formData.postCategoryId ?? ""}  // ← Đảm bảo luôn là string
-                      onChange={val => handleInputChange("postCategoryId", val || undefined)}
-                      fetchOptions={fetchPostCategories}
+                      value={formData.postCategoryId ?? ""}
+                      onChange={(val) => handleInputChange("postCategoryId", val || "")}
+                      fetchOptions={fetchPostCategories}  // ← Không thêm "All"
                       placeholder="Chọn danh mục..."
                       disabled={isLoading}
                     />
@@ -287,7 +287,21 @@ export function BlogPostForm({ initialData, isEditing = false }: BlogPostFormPro
                       id="publishDate"
                       type="datetime-local"
                       value={new Date(formData.publishDate).toISOString().slice(0, 16)}
-                      onChange={e => handleInputChange("publishDate", new Date(e.target.value))}
+                      onChange={(e) => {
+                        const selected = new Date(e.target.value)
+                        const now = new Date()
+
+                        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                        const selectedDate = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate())
+
+                        if (selectedDate < today) {
+                          toast.error("Không thể chọn ngày trong quá khứ")
+                          return
+                        }
+
+                        handleInputChange("publishDate", selected)
+                      }}
+                      min={new Date().toISOString().slice(0, 16)}
                       disabled={isLoading}
                     />
                   </div>
