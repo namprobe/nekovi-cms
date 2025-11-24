@@ -1,71 +1,44 @@
+// src/features/blog-post/components/blog-post-list.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Badge } from "@/shared/ui/badge"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import type { BlogPostListItem } from "@/shared/types/blog"
+import { AsyncSelect, Option } from "@/shared/ui/selects/async-select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/ui/alert-dialog"
+import { blogPostService } from "@/entities/blog-post/blog-post.service"
+import { usePostCategoryOptions } from "@/entities/post-category/hooks/usePostCategoryOptions"
+import type { BlogPostListItem, BlogPostFilter } from "@/entities/blog-post/types/blog-post"
 import { STATUS_VARIANTS } from "@/core/config/constants"
 import { ROUTES } from "@/core/config/routes"
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye, Filter } from "lucide-react"
-
-// Mock data - replace with actual API call
-const mockBlogPosts: BlogPostListItem[] = [
-  {
-    id: "1",
-    title: "Top 10 Anime Figures of 2024",
-    authorName: "John Doe",
-    categoryName: "Reviews",
-    publishDate: new Date("2024-01-15T10:30:00Z"),
-    isPublished: true,
-    featuredImagePath: "/anime-blog-post.jpg",
-    status: 1,
-  },
-  {
-    id: "2",
-    title: "How to Care for Your Anime Collectibles",
-    authorName: "Jane Smith",
-    categoryName: "Guides",
-    publishDate: new Date("2024-01-14T15:45:00Z"),
-    isPublished: true,
-    featuredImagePath: "/anime-care-guide.jpg",
-    status: 1,
-  },
-  {
-    id: "3",
-    title: "Upcoming Anime Releases This Season",
-    authorName: "Bob Johnson",
-    categoryName: "News",
-    publishDate: new Date("2024-01-13T09:15:00Z"),
-    isPublished: false,
-    featuredImagePath: "/anime-releases.jpg",
-    status: 1,
-  },
-  {
-    id: "4",
-    title: "Best Anime Conventions to Visit",
-    authorName: "Alice Brown",
-    categoryName: "Events",
-    publishDate: new Date("2024-01-12T14:20:00Z"),
-    isPublished: true,
-    featuredImagePath: "/anime-convention.jpg",
-    status: 0,
-  },
-]
-
-const categories = [
-  { value: "all", label: "All Categories" },
-  { value: "reviews", label: "Reviews" },
-  { value: "guides", label: "Guides" },
-  { value: "news", label: "News" },
-  { value: "events", label: "Events" },
-]
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
+import { toast } from "sonner"
 
 const publishStatusOptions = [
   { value: "all", label: "All Posts" },
@@ -75,46 +48,124 @@ const publishStatusOptions = [
 
 export function BlogPostList() {
   const router = useRouter()
-  const [posts, setPosts] = useState<BlogPostListItem[]>([])
-  const [loading, setLoading] = useState(true)
+
+  // FILTER STATES
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedPublishStatus, setSelectedPublishStatus] = useState("all")
+  const [selectedCategoryId, setSelectedCategoryId] = useState("")
+
+  // DATA STATES
+  const [allPosts, setAllPosts] = useState<BlogPostListItem[]>([])
   const [filteredPosts, setFilteredPosts] = useState<BlogPostListItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setPosts(mockBlogPosts)
+  // PAGINATION
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [totalPages, setTotalPages] = useState(1)
+
+  // DELETE STATE
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const [publishingId, setPublishingId] = useState<string | null>(null)
+  // Category hook
+  const fetchCategoryOptions = usePostCategoryOptions()
+
+  const fetchOptionsWithAll = useCallback(
+    async (search: string): Promise<Option[]> => {
+      const options = await fetchCategoryOptions(search)
+
+      // Dùng "all" thay vì ""
+      const allOption: Option = { id: "all", label: "All Categories" }
+
+      const filteredOptions = options.filter(opt => opt.id !== "all")
+
+      return [allOption, ...filteredOptions]
+    },
+    [fetchCategoryOptions]
+  )
+
+  // FETCH POSTS
+  const fetchPosts = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+
+    const filter: BlogPostFilter = {
+      isPublished:
+        selectedPublishStatus === "all"
+          ? undefined
+          : selectedPublishStatus === "published",
+      postCategoryId: selectedCategoryId === "" ? undefined : selectedCategoryId,
+      page,
+      pageSize,
+      sortBy: "publishdate",
+      sortOrder: "desc",
+    }
+
+    try {
+      const result = await blogPostService.getBlogPosts(filter)
+      if (result.isSuccess) {
+        setAllPosts(result.items)
+        setFilteredPosts(result.items)
+        setTotalPages(result.totalPages)
+        if (page === 1) applyFilters(result.items)
+      } else {
+        setError(result.errors?.[0] || "Failed to load posts")
+      }
+    } catch (err) {
+      setError("Network error")
+    } finally {
       setLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }, [selectedPublishStatus, selectedCategoryId, page, pageSize])
+
+  // CLIENT-SIDE FILTERING
+  const applyFilters = useCallback(
+    (posts: BlogPostListItem[]) => {
+      let filtered = [...posts]
+
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase()
+        filtered = filtered.filter(
+          (post) =>
+            post.title.toLowerCase().includes(term) ||
+            (post.authorName && post.authorName.toLowerCase().includes(term)) ||
+            (post.postCategory?.name &&
+              post.postCategory.name.toLowerCase().includes(term))
+        )
+      }
+
+      if (selectedPublishStatus !== "all") {
+        const isPublished = selectedPublishStatus === "published"
+        filtered = filtered.filter((post) => post.isPublished === isPublished)
+      }
+
+      setFilteredPosts(filtered)
+    },
+    [searchTerm, selectedPublishStatus]
+  )
+
+  // EFFECTS
+  useEffect(() => {
+    fetchPosts()
+  }, [fetchPosts])
 
   useEffect(() => {
-    let filtered = posts.filter(
-      (post) =>
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.authorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (post.categoryName && post.categoryName.toLowerCase().includes(searchTerm.toLowerCase())),
-    )
+    applyFilters(allPosts)
+  }, [searchTerm, selectedPublishStatus, allPosts, applyFilters])
 
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (post) => post.categoryName && post.categoryName.toLowerCase() === selectedCategory.toLowerCase(),
-      )
-    }
+  useEffect(() => {
+    setPage(1)
+  }, [selectedPublishStatus, selectedCategoryId])
 
-    if (selectedPublishStatus !== "all") {
-      const isPublished = selectedPublishStatus === "published"
-      filtered = filtered.filter((post) => post.isPublished === isPublished)
-    }
-
-    setFilteredPosts(filtered)
-  }, [posts, searchTerm, selectedCategory, selectedPublishStatus])
-
+  // UI HELPERS
   const getStatusBadge = (status: number) => {
-    const statusText = status === 1 ? "Active" : status === 0 ? "Inactive" : "Pending"
-    return <Badge variant={STATUS_VARIANTS[status as keyof typeof STATUS_VARIANTS]}>{statusText}</Badge>
+    const variant =
+      STATUS_VARIANTS[status as keyof typeof STATUS_VARIANTS] || "neutral"
+    const statusText = status === 1 ? "Active" : "Inactive"
+    return <Badge variant={variant}>{statusText}</Badge>
   }
 
   const getPublishBadge = (isPublished: boolean) => {
@@ -125,7 +176,7 @@ export function BlogPostList() {
     )
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: string | Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
@@ -133,21 +184,75 @@ export function BlogPostList() {
     }).format(new Date(date))
   }
 
+  // HANDLE TOGGLE PUBLISH
   const handleTogglePublish = async (postId: string, currentStatus: boolean) => {
-    // TODO: Implement API call to toggle publish status
-    console.log("Toggling publish status:", postId, !currentStatus)
+    if (publishingId === postId) return // Prevent double click
 
-    // Update local state for demo
-    setPosts((prev) => prev.map((post) => (post.id === postId ? { ...post, isPublished: !currentStatus } : post)))
+    setPublishingId(postId)
+    const newStatus = !currentStatus
+
+    try {
+      const result = await blogPostService.publishBlogPost(postId, newStatus)
+      if (result.isSuccess) {
+        toast.success(newStatus ? "Đã đăng bài" : "Đã hủy đăng")
+        fetchPosts() // refresh
+      } else {
+        toast.error(result.message || "Cập nhật thất bại")
+      }
+    } catch (err) {
+      console.error("Publish error:", err)
+      toast.error("Lỗi mạng")
+    } finally {
+      setPublishingId(null) // Luôn reset
+    }
   }
 
+  // HANDLE DELETE
+  const handleDeletePost = async (id: string) => {
+    setIsDeleting(true)
+    try {
+      const result = await blogPostService.deleteBlogPost(id)
+      if (result.isSuccess) {
+        toast.success("Xóa bài viết thành công!")
+        setAllPosts((prev) => prev.filter((p) => p.id !== id))
+        setFilteredPosts((prev) => prev.filter((p) => p.id !== id))
+      } else {
+        toast.error(result.errors?.[0] || "Xóa thất bại")
+      }
+    } catch (err) {
+      toast.error("Lỗi mạng")
+    } finally {
+      setIsDeleting(false)
+      setDeleteId(null)
+    }
+  }
+
+  // LOADING UI
   if (loading) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center space-x-4">
+                <div className="bg-gray-200 border-2 border-dashed rounded-xl w-12 h-12" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
+                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
           </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-red-500 text-center">{error}</p>
         </CardContent>
       </Card>
     )
@@ -163,7 +268,9 @@ export function BlogPostList() {
             Create Post
           </Button>
         </div>
-        <div className="flex items-center space-x-4">
+
+        {/* SEARCH + FILTERS */}
+        <div className="flex items-center space-x-4 mt-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -173,33 +280,30 @@ export function BlogPostList() {
               className="pl-10"
             />
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-48">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedPublishStatus} onValueChange={setSelectedPublishStatus}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {publishStatusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+          <div className="w-48">
+            <AsyncSelect
+              value={selectedCategoryId}
+              onChange={(val) => setSelectedCategoryId(val === "all" ? "" : val)}
+              fetchOptions={fetchOptionsWithAll}
+              placeholder="Category"
+            />
+          </div>
+
+          <select
+            value={selectedPublishStatus}
+            onChange={(e) => setSelectedPublishStatus(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm w-40"
+          >
+            {publishStatusOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </CardHeader>
+
       <CardContent>
         <Table>
           <TableHeader>
@@ -219,27 +323,34 @@ export function BlogPostList() {
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                      <Image
-                        src={post.featuredImagePath || "/placeholder.svg"}
-                        alt={post.title}
-                        fill
-                        className="object-cover"
-                      />
+                      {post.featuredImage ? (
+                        <img
+                          src={post.featuredImage}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-gray-400 text-xs">
+                          No image
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div className="font-medium line-clamp-2">{post.title}</div>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{post.authorName}</TableCell>
+                <TableCell>{post.authorName || "-"}</TableCell>
                 <TableCell>
-                  {post.categoryName ? (
-                    <Badge variant="outline">{post.categoryName}</Badge>
+                  {post.postCategory?.name ? (
+                    <Badge variant="outline">{post.postCategory.name}</Badge>
                   ) : (
                     <span className="text-gray-400">-</span>
                   )}
                 </TableCell>
-                <TableCell className="text-sm text-gray-600">{formatDate(post.publishDate)}</TableCell>
+                <TableCell className="text-sm text-gray-600">
+                  {formatDate(post.publishDate)}
+                </TableCell>
                 <TableCell>{getStatusBadge(post.status)}</TableCell>
                 <TableCell>{getPublishBadge(post.isPublished)}</TableCell>
                 <TableCell>
@@ -250,19 +361,45 @@ export function BlogPostList() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.BLOG_POST_DETAIL(post.id))}>
+                      <DropdownMenuItem
+                        onClick={() => router.push(ROUTES.BLOG_POST_DETAIL(post.id))}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.BLOG_POST_DETAIL(post.id))}>
+                      <DropdownMenuItem
+                        onClick={() => router.push(ROUTES.BLOG_POST_EDIT(post.id))}
+                      >
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleTogglePublish(post.id, post.isPublished)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        {post.isPublished ? "Unpublish" : "Publish"}
+                      <DropdownMenuItem
+                        onClick={() => handleTogglePublish(post.id, post.isPublished)}
+                        disabled={publishingId === post.id}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center">
+                          {publishingId === post.id ? (
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                          ) : (
+                            <Eye className="mr-2 h-4 w-4" />
+                          )}
+                          <span>
+                            {publishingId === post.id
+                              ? "Đang xử lý..."
+                              : post.isPublished
+                                ? "Unpublish"
+                                : "Publish"}
+                          </span>
+                        </div>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDeleteId(post.id)
+                        }}
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>
@@ -274,12 +411,60 @@ export function BlogPostList() {
           </TableBody>
         </Table>
 
-        {filteredPosts.length === 0 && (
+        {/* EMPTY STATE */}
+        {filteredPosts.length === 0 && !loading && (
           <div className="text-center py-8">
             <p className="text-gray-500">No blog posts found</p>
           </div>
         )}
+
+        {/* PAGINATION */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center space-x-2 mt-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </CardContent>
+
+      {/* DELETE CONFIRM DIALOG */}
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa bài viết</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa bài viết này?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId && handleDeletePost(deleteId)}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

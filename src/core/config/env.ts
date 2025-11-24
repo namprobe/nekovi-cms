@@ -1,3 +1,4 @@
+//src/core/config/env.ts
 // Helper function to normalize URL by removing trailing slash
 function normalizeUrl(url: string): string {
     return url.endsWith('/') ? url.slice(0, -1) : url;
@@ -66,7 +67,23 @@ export const env = {
             UPDATE: (id: string) => `/events/${id}`,
             DELETE: (id: string) => `/events/${id}`,
         },
-
+        BLOGPOST: {
+            LIST: `/blog-posts`,
+            DETAIL: (id: string) => `/blog-posts/${id}`,
+            CREATE: `/blog-posts`,
+            UPDATE: (id: string) => `/blog-posts/${id}`,
+            DELETE: (id: string) => `/blog-posts/${id}`,
+            PUBLISH: (id: string) => `/blog-posts/${id}/publish`,
+        },
+        // env.ts
+        POST_CATEGORY: {
+            SELECT_LIST: `/post-categories/select-list`,
+            LIST: `/post-categories`,
+            DETAIL: (id: string) => `/post-categories/${id}`,
+            CREATE: `/post-categories`,
+            UPDATE: (id: string) => `/post-categories/${id}`,
+            DELETE: (id: string) => `/post-categories/${id}`,
+        },
     }
 } as const;
 

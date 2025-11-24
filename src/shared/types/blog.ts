@@ -1,3 +1,4 @@
+// src/shared/types/blog.ts
 import type { BaseEntity } from "./common"
 
 export interface BlogPost extends BaseEntity {
@@ -36,14 +37,16 @@ export interface PostTag extends BaseEntity {
 }
 
 // DTOs
+// Chỉ dùng khi create
 export interface CreateBlogPostDto {
   title: string
   content: string
   postCategoryId?: string
   publishDate: Date
   isPublished: boolean
-  featuredImagePath?: string
-  tagIds: string[]
+  featuredImageFile?: File
+  tagIds?: string[]
+  status?: number
 }
 
 export interface UpdateBlogPostDto {
@@ -56,13 +59,18 @@ export interface UpdateBlogPostDto {
   tagIds?: string[]
 }
 
+// src/entities/blog-post/types/blog-post.ts
 export interface BlogPostListItem {
   id: string
   title: string
-  authorName: string
-  categoryName?: string
-  publishDate: Date
+  authorName?: string
+  postCategory?: {
+    id: string
+    name: string
+  }
+  publishDate: string | Date
   isPublished: boolean
-  featuredImagePath?: string
+  featuredImage?: string
   status: number
+  postTags: { tagId: string; tagName: string }[]
 }
