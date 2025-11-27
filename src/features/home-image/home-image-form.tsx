@@ -23,6 +23,7 @@ interface Props {
 export function HomeImageForm({ initialData, isEditing = false }: Props) {
     const router = useRouter()
     const { toast } = useToast()
+
     const [name, setName] = useState(initialData?.name || "")
     const [animeSeriesId, setAnimeSeriesId] = useState(initialData?.animeSeriesId || "")
     const [imageFile, setImageFile] = useState<File | null>(null)
@@ -42,21 +43,21 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
         fetchOptions("")
     }, [fetchOptions])
 
-    // Xử lý upload ảnh
+    // Handle image upload
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
 
-        // Validate size (5MB)
+        // Validate size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            toast({ title: "Error", description: "Ảnh không được vượt quá 5MB", variant: "destructive" })
+            toast({ title: "Error", description: "Image must not exceed 5MB", variant: "destructive" })
             return
         }
 
         // Validate extension
         const ext = file.name.split(".").pop()?.toLowerCase()
         if (!["jpg", "jpeg", "png", "webp", "gif"].includes(ext || "")) {
-            toast({ title: "Error", description: "Chỉ chấp nhận .jpg, .jpeg, .png, .webp, .gif", variant: "destructive" })
+            toast({ title: "Error", description: "Allowed formats: JPG, JPEG, PNG, WebP, GIF", variant: "destructive" })
             return
         }
 
@@ -64,7 +65,7 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
         setPreviewUrl(URL.createObjectURL(file))
     }
 
-    // Xóa ảnh
+    // Remove selected image
     const removeImage = () => {
         setImageFile(null)
         setPreviewUrl("")
@@ -72,10 +73,12 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
         if (!name.trim()) {
             toast({ title: "Error", description: "Name is required", variant: "destructive" })
             return
         }
+
         if (!imageFile && !isEditing) {
             toast({ title: "Error", description: "Image is required", variant: "destructive" })
             return
@@ -85,6 +88,7 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
         const fd = new FormData()
         fd.append("name", name.trim())
         if (animeSeriesId) fd.append("animeSeriesId", animeSeriesId)
+
         if (imageFile) {
             fd.append("imageFile", imageFile)
         } else if (isEditing && initialData?.imagePath) {
@@ -97,13 +101,20 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
                 : await homeImageService.create(fd)
 
             if (res.isSuccess) {
-                toast({ title: "Thành công!", description: isEditing ? "Cập nhật thành công" : "Tạo mới thành công" })
+                toast({
+                    title: "Success!",
+                    description: isEditing ? "Updated successfully" : "Created successfully"
+                })
                 router.push(ROUTES.HOME_IMAGES)
             } else {
-                toast({ title: "Lỗi", description: res.message || "Có lỗi xảy ra", variant: "destructive" })
+                toast({
+                    title: "Error",
+                    description: res.message || "Something went wrong",
+                    variant: "destructive"
+                })
             }
         } catch (err) {
-            toast({ title: "Lỗi", description: "Lỗi hệ thống", variant: "destructive" })
+            toast({ title: "Error", description: "System error", variant: "destructive" })
         } finally {
             setLoading(false)
         }
@@ -120,17 +131,19 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
                 <Button variant="ghost" size="icon" asChild>
                     <Link href={ROUTES.HOME_IMAGES}><ArrowLeft /></Link>
                 </Button>
-                <h1 className="text-3xl font-bold">{isEditing ? "Chỉnh sửa" : "Thêm"} Home Image</h1>
+                <h1 className="text-3xl font-bold">{isEditing ? "Edit" : "Create"} Home Image</h1>
             </div>
 
             <Card>
                 <CardContent className="p-6">
                     <form onSubmit={handleSubmit} className="space-y-8">
                         <div className="grid md:grid-cols-2 gap-8">
-                            {/* Cột trái: Upload ảnh - giống BlogPostForm */}
+                            {/* Left column: Image upload */}
                             <div className="space-y-6">
                                 <div className="space-y-3">
-                                    <Label>Image {isEditing ? "(có thể bỏ trống nếu không đổi)" : "*"}</Label>
+                                    <Label>
+                                        Image {isEditing ? "(optional if unchanged)" : "*"}
+                                    </Label>
 
                                     {previewUrl ? (
                                         <div className="relative group">
@@ -162,7 +175,7 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
                                                         disabled={loading}
                                                     >
                                                         <Upload className="mr-2 h-4 w-4" />
-                                                        Chọn ảnh từ máy
+                                                        Choose Image
                                                     </Button>
                                                     <input
                                                         id="home-image-upload"
@@ -174,7 +187,7 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
                                                     />
                                                 </div>
                                                 <p className="text-xs text-gray-500">
-                                                    Định dạng: JPG, PNG, WebP, GIF • Tối đa 5MB
+                                                    Formats: JPG, PNG, WebP, GIF • Max size: 5MB
                                                 </p>
                                             </div>
                                         </div>
@@ -182,26 +195,26 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
                                 </div>
                             </div>
 
-                            {/* Cột phải: Form */}
+                            {/* Right column: Form fields */}
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name">Tên ảnh *</Label>
+                                    <Label htmlFor="name">Image Name *</Label>
                                     <Input
                                         id="name"
                                         value={name}
                                         onChange={e => setName(e.target.value)}
-                                        placeholder="Ví dụ: Banner Summer Sale 2025"
+                                        placeholder="Example: Summer Sale Banner 2025"
                                         disabled={loading}
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>Anime Series (tùy chọn)</Label>
+                                    <Label>Anime Series (optional)</Label>
                                     <AsyncSelect
                                         value={animeSeriesId}
                                         onChange={setAnimeSeriesId}
                                         fetchOptions={fetchAnimeOptions}
-                                        placeholder="Tìm và chọn anime series..."
+                                        placeholder="Search and select anime series..."
                                         disabled={loading}
                                         clearable={true}
                                         initialSelectedOption={initialAnimeOption}
@@ -210,20 +223,21 @@ export function HomeImageForm({ initialData, isEditing = false }: Props) {
                             </div>
                         </div>
 
-                        {/* Nút submit */}
+                        {/* Submit button */}
                         <div className="flex justify-end gap-4 pt-6 border-t">
                             <Button type="button" variant="outline" asChild disabled={loading}>
-                                <Link href={ROUTES.HOME_IMAGES}>Hủy</Link>
+                                <Link href={ROUTES.HOME_IMAGES}>Cancel</Link>
                             </Button>
+
                             <Button type="submit" disabled={loading} className="min-w-32">
                                 {loading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Đang lưu...
+                                        Saving...
                                     </>
                                 ) : (
                                     <>
-                                        {isEditing ? "Cập nhật" : "Tạo mới"}
+                                        {isEditing ? "Update" : "Create"}
                                     </>
                                 )}
                             </Button>
