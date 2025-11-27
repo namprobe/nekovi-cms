@@ -163,19 +163,16 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
         setIsLoading(true)
         try {
             await onSave(data, !!editingCoupon, editingCoupon?.id)
-            toast({ 
-                title: "Success", 
-                description: editingCoupon ? "Coupon updated successfully" : "Coupon created successfully" 
-            })
-            onOpenChange(false)
+            // Success handling is done in handleSave
         } catch (err: any) {
             const errorMessage = err.message || "Failed to save coupon"
             setErrors({ general: errorMessage })
             toast({ 
-                title: "Error", 
+                title: editingCoupon ? "Update Failed" : "Create Failed", 
                 description: errorMessage, 
                 variant: "destructive" 
             })
+            // Keep dialog open so user can see and fix the errors
         } finally {
             setIsLoading(false)
         }
@@ -241,7 +238,7 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
                             <Select
                                 value={formData.discountType}
                                 onValueChange={(value) => handleInputChange("discountType", value)}
-                                disabled={isLoading}
+                                disabled={isLoading || !!editingCoupon}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select type" />
@@ -251,6 +248,11 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
                                     <SelectItem value="2">Fixed Amount ($)</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {editingCoupon && (
+                                <p className="text-xs text-muted-foreground">
+                                    Discount type cannot be changed after creation
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
