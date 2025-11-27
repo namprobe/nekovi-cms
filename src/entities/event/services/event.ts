@@ -1,5 +1,6 @@
 //src/entities/event/types/event.ts
 import { apiClient } from "@/core/lib/api-client"
+import type { PaginateResult } from "@/shared/types/common"
 import { env } from "@/core/config/env"
 import type {
     EventListItem,
@@ -23,7 +24,7 @@ export const eventService = {
         if (params?.page) query.append("page", params.page.toString())
         if (params?.pageSize) query.append("pageSize", params.pageSize.toString())
 
-        return apiClient.get<PaginatedEventList>(`${env.ENDPOINTS.EVENT.LIST}?${query.toString()}`)
+        return apiClient.get<PaginateResult<EventListItem>>(`${env.ENDPOINTS.EVENT.LIST}?${query.toString()}`)
     },
 
     /**

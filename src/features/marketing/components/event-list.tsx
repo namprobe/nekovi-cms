@@ -51,9 +51,11 @@ export function EventList() {
         status: statusParam,
       })
 
+      console.log("Event API response:", response)
+
       if (response.isSuccess && response.data) {
         setEvents(response.data.items)
-        setTotal(response.data.total)
+        setTotal(response.data.totalItems)
       } else {
         setEvents([])
         setTotal(0)
@@ -243,6 +245,22 @@ export function EventList() {
               ))}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          <div className="mt-4 flex justify-between items-center">
+            <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+              Prev
+            </Button>
+
+            <span>
+              Page {page} of {Math.ceil(total / limit) || 1}
+            </span>
+
+            <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)}>
+              Next
+            </Button>
+          </div>
+
         </div>
       </CardContent>
     </Card>

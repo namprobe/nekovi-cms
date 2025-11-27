@@ -84,6 +84,13 @@ export const env = {
             UPDATE: (id: string) => `/post-categories/${id}`,
             DELETE: (id: string) => `/post-categories/${id}`,
         },
+        HOME_IMAGE: {
+            LIST: `/home-images`,
+            DETAIL: (id: string) => `/home-images/${id}`,
+            CREATE: `/home-images`,
+            UPDATE: (id: string) => `/home-images/${id}`,
+            DELETE: (id: string) => `/home-images/${id}`,
+        }
     }
 } as const;
 

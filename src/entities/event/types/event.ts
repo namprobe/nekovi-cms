@@ -1,5 +1,5 @@
 //src/entities/event/types/event.ts
-import type { BaseEntity } from "@/shared/types/common"
+import type { ApiResult, BaseEntity } from "@/shared/types/common"
 
 export interface Event extends BaseEntity {
   name: string
@@ -55,6 +55,7 @@ export interface PaginatedEventList {
   total: number
   page: number
   pageSize: number
+  totalPages: number
 }
 
 export interface EventResponse {
@@ -75,4 +76,11 @@ export interface EventResponse {
     status: number
     category?: { name: string }
   }[]
+}
+
+export interface EventPaginationResult extends ApiResult<EventListItem[]> {
+  totalCount?: number
+  currentPage?: number
+  pageSize?: number
+  totalPages?: number
 }
