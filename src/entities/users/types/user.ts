@@ -89,7 +89,7 @@ export interface UserListItem {
   phoneNumber?: string
   lastLoginAt?: Date
   status: number
-  roles: string[]
+  roles: (string | Role)[]
   avatarPath?: string
 }
 
