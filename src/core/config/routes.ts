@@ -1,3 +1,4 @@
+//src/core/config/routes.ts
 export const ROUTES = {
   // Public routes
   HOME: "/",
@@ -9,8 +10,8 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
 
   // User management
-   USERS: "/dashboard/users",
-  USER_CREATE: "/dashboard/users/create", 
+  USERS: "/dashboard/users",
+  USER_CREATE: "/dashboard/users/create",
   USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
   USER_EDIT: (id: string) => `/dashboard/users/${id}/edit`,
 
@@ -44,6 +45,11 @@ export const ROUTES = {
   EVENT_EDIT: (id: string) => `/dashboard/events/${id}/edit`,
   EVENT_CREATE: "/dashboard/events/create",
 
+  //Home Images
+  HOME_IMAGES: "/dashboard/home-images",
+  HOME_IMAGE_CREATE: "/dashboard/home-images/create",
+  HOME_IMAGE_EDIT: (id: string) => `/dashboard/home-images/${id}`,
+
   // Marketing
   MARKETING: "/dashboard/marketing",
   COUPONS: "/dashboard/marketing/coupons",
@@ -56,7 +62,7 @@ export const ROUTES = {
 
   // Reports
   REPORTS: "/dashboard/reports",
-  
+
   // Settings
   SETTINGS: "/dashboard/settings",
   PROFILE: "/dashboard/profile",
