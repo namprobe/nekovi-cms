@@ -9,6 +9,7 @@ export interface CreateCouponRequest {
   Description?: string
   DiscountType: number
   DiscountValue: number
+  MaxDiscountCap?: number | null
   MinOrderAmount: number
   StartDate: string
   EndDate: string
@@ -21,6 +22,7 @@ export interface UpdateCouponRequest {
   Description?: string
   DiscountType: number
   DiscountValue: number
+  MaxDiscountCap?: number | null
   MinOrderAmount: number
   StartDate: string
   EndDate: string
