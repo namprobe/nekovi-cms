@@ -67,14 +67,32 @@ export function CouponList() {
   }
 
   const getDiscountTypeText = (discountType: number) => {
-    return discountType === 1 ? "Percentage" : "Fixed Amount"
+    switch (discountType) {
+      case 0:
+        return "Percentage"
+      case 1:
+        return "Fixed Amount"
+      case 2:
+        return "Free Shipping"
+      default:
+        return "Unknown"
+    }
   }
 
   const formatDiscount = (coupon: Coupon) => {
-    if (coupon.discountType === 1) {
-      return `${coupon.discountValue}%`
-    } else {
+    if (coupon.discountType === 0) {
+      // Percentage
+      const discountText = `${coupon.discountValue}%`
+      if (coupon.maxDiscountCap && coupon.maxDiscountCap > 0) {
+        return `${discountText} (max $${coupon.maxDiscountCap.toFixed(2)})`
+      }
+      return discountText
+    } else if (coupon.discountType === 1) {
+      // Fixed Amount
       return `$${coupon.discountValue.toFixed(2)}`
+    } else {
+      // Free Shipping
+      return "Free Shipping"
     }
   }
 
@@ -128,6 +146,9 @@ const handleSave = async (formData: FormData, isEdit: boolean, id?: string) => {
     Description: formData.get("Description") as string || undefined,
     DiscountType: parseInt(formData.get("DiscountType") as string),
     DiscountValue: parseFloat(formData.get("DiscountValue") as string),
+    MaxDiscountCap: formData.get("MaxDiscountCap") && (formData.get("MaxDiscountCap") as string).trim() 
+      ? parseFloat(formData.get("MaxDiscountCap") as string) 
+      : undefined,
     MinOrderAmount: parseFloat(formData.get("MinOrderAmount") as string),
     StartDate: formData.get("StartDate") as string,
     EndDate: formData.get("EndDate") as string,
@@ -173,9 +194,9 @@ const handleSave = async (formData: FormData, isEdit: boolean, id?: string) => {
     if (errorMessage === "Failed to save coupon" && result.errors && typeof result.errors === 'object' && !Array.isArray(result.errors)) {
       const errorFields = Object.keys(result.errors)
       if (errorFields.length > 0) {
-        const messages = result.errors[errorFields[0]]
+        const messages = (result.errors as Record<string, unknown>)[errorFields[0]]
         if (Array.isArray(messages) && messages.length > 0) {
-          errorMessage = messages[0]
+          errorMessage = String(messages[0])
         }
       }
     }

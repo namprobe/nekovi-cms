@@ -24,8 +24,9 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
     const [formData, setFormData] = useState({ 
         code: "", 
         description: "", 
-        discountType: "1", // 1: Percentage, 2: FixedAmount
+        discountType: "0", // 0: Percentage, 1: FixedAmount, 2: FreeShipping
         discountValue: "",
+        maxDiscountCap: "",
         minOrderAmount: "",
         startDate: "",
         endDate: "",
@@ -34,6 +35,7 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [isLoading, setIsLoading] = useState(false)
+    const isFreeShipping = formData.discountType === "2"
 
     // Reset form when dialog opens/closes or editing coupon changes
     useEffect(() => {
@@ -42,7 +44,11 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
                 code: editingCoupon.code,
                 description: editingCoupon.description || "",
                 discountType: editingCoupon.discountType.toString(),
-                discountValue: editingCoupon.discountValue.toString(),
+                discountValue:
+                    editingCoupon.discountType === 2
+                        ? "0"
+                        : editingCoupon.discountValue.toString(),
+                maxDiscountCap: editingCoupon.maxDiscountCap?.toString() || "",
                 minOrderAmount: editingCoupon.minOrderAmount.toString(),
                 startDate: editingCoupon.startDate.split('T')[0], // Convert to YYYY-MM-DD
                 endDate: editingCoupon.endDate.split('T')[0],
@@ -57,8 +63,9 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
             setFormData({ 
                 code: "", 
                 description: "", 
-                discountType: "1",
+                discountType: "0",
                 discountValue: "",
+                maxDiscountCap: "",
                 minOrderAmount: "",
                 startDate: today,
                 endDate: oneMonthLater,
@@ -70,7 +77,22 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
     }, [editingCoupon, open])
 
     const handleInputChange = (field: keyof typeof formData, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }))
+        if (field === "discountType" && editingCoupon) {
+            // Prevent changing discount type while editing existing coupon
+            return
+        }
+        setFormData((prev) => {
+            if (field === "discountType") {
+                const nextState = { ...prev, discountType: value }
+                if (value === "2") {
+                    nextState.discountValue = "0"
+                } else if (prev.discountType === "2" && value !== "2") {
+                    nextState.discountValue = ""
+                }
+                return nextState
+            }
+            return { ...prev, [field]: value }
+        })
         if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }))
         if (errors.general) setErrors((prev) => ({ ...prev, general: "" }))
     }
@@ -86,14 +108,24 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
         }
 
         // Discount value validation
-        if (!formData.discountValue.trim()) {
-            newErrors.discountValue = "Discount value is required"
-        } else {
-            const discountValue = parseFloat(formData.discountValue)
-            if (isNaN(discountValue) || discountValue <= 0) {
-                newErrors.discountValue = "Discount value must be a positive number"
-            } else if (formData.discountType === "1" && discountValue > 100) {
-                newErrors.discountValue = "Percentage discount cannot exceed 100%"
+        if (!isFreeShipping) {
+            if (!formData.discountValue.trim()) {
+                newErrors.discountValue = "Discount value is required"
+            } else {
+                const discountValue = parseFloat(formData.discountValue)
+                if (isNaN(discountValue) || discountValue <= 0) {
+                    newErrors.discountValue = "Discount value must be a positive number"
+                } else if (formData.discountType === "0" && discountValue > 100) {
+                    newErrors.discountValue = "Percentage discount cannot exceed 100%"
+                }
+            }
+        }
+
+        // Max discount cap validation (only for Percentage type)
+        if (formData.discountType === "0" && formData.maxDiscountCap.trim()) {
+            const maxDiscountCap = parseFloat(formData.maxDiscountCap)
+            if (isNaN(maxDiscountCap) || maxDiscountCap <= 0) {
+                newErrors.maxDiscountCap = "Max discount cap must be a positive number"
             }
         }
 
@@ -153,7 +185,8 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
         data.append("Code", formData.code.toUpperCase())
         data.append("Description", formData.description || "")
         data.append("DiscountType", formData.discountType)
-        data.append("DiscountValue", formData.discountValue)
+        data.append("DiscountValue", isFreeShipping ? "0" : formData.discountValue)
+        data.append("MaxDiscountCap", formData.discountType === "0" && formData.maxDiscountCap.trim() ? formData.maxDiscountCap : "")
         data.append("MinOrderAmount", formData.minOrderAmount)
         data.append("StartDate", formData.startDate + "T00:00:00.000Z") // Convert to ISO string
         data.append("EndDate", formData.endDate + "T23:59:59.999Z")
@@ -244,8 +277,9 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
                                     <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="1">Percentage (%)</SelectItem>
-                                    <SelectItem value="2">Fixed Amount ($)</SelectItem>
+                                <SelectItem value="0">Percentage (%)</SelectItem>
+                                <SelectItem value="1">Fixed Amount</SelectItem>
+                                <SelectItem value="2">Free Shipping</SelectItem>
                                 </SelectContent>
                             </Select>
                             {editingCoupon && (
@@ -255,25 +289,62 @@ export function CouponFormDialog({ open, onOpenChange, editingCoupon, onSave }: 
                             )}
                         </div>
 
+                        {!isFreeShipping ? (
+                            <div className="space-y-2">
+                                <Label htmlFor="discountValue">
+                                    Discount Value *
+                                    {formData.discountType === "0" ? " (%)" : " (currency)"}
+                                </Label>
+                                <Input
+                                    id="discountValue"
+                                    type="number"
+                                    step={formData.discountType === "0" ? "0.01" : "1"}
+                                    min="0"
+                                    max={formData.discountType === "0" ? "100" : undefined}
+                                    value={formData.discountValue}
+                                    onChange={(e) => handleInputChange("discountValue", e.target.value)}
+                                    placeholder={
+                                        formData.discountType === "0" ? "e.g., 25" : "e.g., 100000"
+                                    }
+                                    disabled={isLoading}
+                                />
+                                {errors.discountValue && (
+                                    <p className="text-sm text-red-600">{errors.discountValue}</p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label>Discount Value</Label>
+                                <div className="rounded-md border border-dashed bg-muted/30 p-3 text-sm text-muted-foreground">
+                                    Free shipping vouchers do not require a discount value.
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Max Discount Cap - Only for Percentage type */}
+                    {formData.discountType === "0" && (
                         <div className="space-y-2">
-                            <Label htmlFor="discountValue">
-                                Discount Value * 
-                                {formData.discountType === "1" ? " (%)" : " ($)"}
-                            </Label>
+                            <Label htmlFor="maxDiscountCap">Max Discount Cap (Optional)</Label>
                             <Input
-                                id="discountValue"
+                                id="maxDiscountCap"
                                 type="number"
-                                step={formData.discountType === "1" ? "0.01" : "1"}
+                                step="0.01"
                                 min="0"
-                                max={formData.discountType === "1" ? "100" : undefined}
-                                value={formData.discountValue}
-                                onChange={(e) => handleInputChange("discountValue", e.target.value)}
-                                placeholder={formData.discountType === "1" ? "e.g., 25" : "e.g., 10"}
+                                value={formData.maxDiscountCap}
+                                onChange={(e) => handleInputChange("maxDiscountCap", e.target.value)}
+                                placeholder="e.g., 50000"
                                 disabled={isLoading}
                             />
-                            {errors.discountValue && <p className="text-sm text-red-600">{errors.discountValue}</p>}
+                            {errors.maxDiscountCap && (
+                                <p className="text-sm text-red-600">{errors.maxDiscountCap}</p>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                                Maximum discount amount for percentage coupons. Leave empty for no limit.
+                                Example: 13% discount with max cap of 80,000đ means maximum discount is 80,000đ.
+                            </p>
                         </div>
-                    </div>
+                    )}
 
                     {/* Minimum Order Amount */}
                     <div className="space-y-2">
