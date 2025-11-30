@@ -1,4 +1,3 @@
-// src/features/product-inventory/components/product-inventory-list.tsx
 "use client"
 
 import { useState, useEffect } from "react"
@@ -13,6 +12,8 @@ import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import type { ProductInventoryItem } from "@/entities/product-inventories/types/product-inventory"
 import ProductInventoryDialog from "../product-inventory-dialog"
+import { useRouter, useSearchParams } from "next/navigation"
+
 
 interface ProductInventoryListProps {
     productId: string
@@ -20,20 +21,37 @@ interface ProductInventoryListProps {
 
 export default function ProductInventoryList({ productId }: ProductInventoryListProps) {
     const { toast } = useToast()
+
     const [items, setItems] = useState<ProductInventoryItem[]>([])
     const [loading, setLoading] = useState(true)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+
+    // Pagination
+    const searchParams = useSearchParams()
+    const router = useRouter()
+
+    const pageFromUrl = Number(searchParams.get("page") || "1")
+    const [page, setPage] = useState(pageFromUrl)
+
+    const pageSize = 3
+    const [totalPages, setTotalPages] = useState(1)
+    const [totalItems, setTotalItems] = useState(0)
 
     // Dialog state
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingItem, setEditingItem] = useState<ProductInventoryItem | null>(null)
 
-    // Load list
     const loadData = async () => {
         setLoading(true)
         try {
-            const result = await productInventoryService.getHistoryByProductId(productId, { pageSize: 100 })
+            const result = await productInventoryService.getHistoryByProductId(productId, {
+                page,
+                pageSize
+            })
+
             setItems(result.items || [])
+            setTotalPages(result.totalPages)
+            setTotalItems(result.totalItems)
         } catch (err) {
             toast({ title: "Error", description: "Failed to load inventory history", variant: "destructive" })
         } finally {
@@ -41,7 +59,6 @@ export default function ProductInventoryList({ productId }: ProductInventoryList
         }
     }
 
-    // Delete record
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this inventory entry?")) return
 
@@ -49,7 +66,7 @@ export default function ProductInventoryList({ productId }: ProductInventoryList
         try {
             await productInventoryService.delete(id)
             toast({ title: "Inventory entry deleted" })
-            setItems(prev => prev.filter(item => item.id !== id))
+            loadData()
         } catch (err) {
             toast({ title: "Error", description: "Unable to delete entry", variant: "destructive" })
         } finally {
@@ -58,9 +75,16 @@ export default function ProductInventoryList({ productId }: ProductInventoryList
     }
 
     useEffect(() => {
-        loadData()
-    }, [productId])
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("page", String(page))
 
+        router.replace(`?${params.toString()}`, { scroll: false })
+    }, [page])
+
+
+    useEffect(() => {
+        loadData()
+    }, [productId, page])
 
     if (loading) {
         return (
@@ -79,10 +103,9 @@ export default function ProductInventoryList({ productId }: ProductInventoryList
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                         <Package className="h-5 w-5" />
-                        Inventory Entries ({items.length})
+                        Inventory Entries ({totalItems})
                     </CardTitle>
 
-                    {/* Main add button */}
                     <Button
                         onClick={() => {
                             setEditingItem(null)
@@ -134,8 +157,6 @@ export default function ProductInventoryList({ productId }: ProductInventoryList
                                         </DropdownMenuTrigger>
 
                                         <DropdownMenuContent align="end">
-
-                                            {/* Edit */}
                                             <DropdownMenuItem
                                                 onClick={() => {
                                                     setEditingItem(item)
@@ -146,7 +167,6 @@ export default function ProductInventoryList({ productId }: ProductInventoryList
                                                 Edit
                                             </DropdownMenuItem>
 
-                                            {/* Delete */}
                                             <DropdownMenuItem
                                                 className="text-red-600"
                                                 onClick={() => handleDelete(item.id)}
@@ -167,9 +187,31 @@ export default function ProductInventoryList({ productId }: ProductInventoryList
                         No inventory entries found
                     </div>
                 )}
+
+                {/* Pagination */}
+                {totalItems > 0 && (
+                    <div className="mt-6 flex justify-between items-center">
+                        <Button
+                            disabled={page <= 1}
+                            onClick={() => setPage(page - 1)}
+                        >
+                            Previous
+                        </Button>
+
+                        <span className="text-sm">
+                            Page {page} / {totalPages} ({totalItems} entries)
+                        </span>
+
+                        <Button
+                            disabled={page >= totalPages}
+                            onClick={() => setPage(page + 1)}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                )}
             </CardContent>
 
-            {/* Shared Create + Edit dialog */}
             <ProductInventoryDialog
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}

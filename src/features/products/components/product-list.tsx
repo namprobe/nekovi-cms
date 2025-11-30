@@ -154,8 +154,8 @@ export default function ProductList() {
               value={searchTerm}
               // ✅ SỬA LẠI ĐOẠN NÀY
               onChange={(e) => {
-                setSearchTerm(e.target.value) // Cập nhật từ khóa
-                setPage(1)                    // Chỉ reset về trang 1 khi người dùng gõ
+                setSearchTerm(e.target.value)
+                setPage(1)
               }}
               className="pl-10"
             />
