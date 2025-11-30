@@ -1,9 +1,8 @@
 // src/features/products/components/product-list.tsx
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useProducts } from "@/features/products/hooks/use-products"
+import { useState, useEffect, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
@@ -15,49 +14,97 @@ import { ROUTES } from "@/core/config/routes"
 import { STATUS_VARIANTS } from "@/core/config/constants"
 import { productService } from "@/entities/products/services/product"
 import { useToast } from "@/hooks/use-toast"
+import { useDebounce } from "@/hooks/use-debounce"   // ← Import hook
 import ProductInventoryDialog from "@/features/product-inventory/product-inventory-dialog"
-
-// Không cần import useQueryClient nữa
 
 export default function ProductList() {
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-
-  const { items, loading, error, page, limit, setPage, total, refresh } = useProducts({
-    page: 1,
-    limit: 10,
-    search: "",
-  })
-
-  const [filteredProducts, setFilteredProducts] = useState(items)
-
-  // State cho dialog nhập kho
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const { toast } = useToast()
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
+  // State
+  const [products, setProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const limit = 10
+
+  // Search state
+  const [searchTerm, setSearchTerm] = useState("")                    // ← UI input
+  const debouncedSearch = useDebounce(searchTerm, 400)                // ← Debounced value
+
+  // Dialog state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
 
-  useEffect(() => {
-    let filtered = items.filter(
-      (p) =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.category?.name && p.category.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((p) => p.category?.name?.toLowerCase() === selectedCategory.toLowerCase())
-    }
-    setFilteredProducts(filtered)
-  }, [items, searchTerm, selectedCategory])
+  const searchParams = useSearchParams()
 
+  useEffect(() => {
+    const urlSearch = searchParams.get("search") || ""
+    const urlPage = Number(searchParams.get("page") || 1)
+
+    setSearchTerm(urlSearch)
+    setPage(urlPage)
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+
+    if (searchTerm) params.set("search", searchTerm)
+    if (page) params.set("page", String(page))
+
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }, [searchTerm, page])
+
+  // Fetch function
+  const fetchProducts = async () => {
+    try {
+      setLoading(true)
+      const res = await productService.getProducts({
+        page,
+        limit,
+        search: debouncedSearch || undefined,
+      })
+
+      if (res.isSuccess) {
+        setProducts(res.items)
+        setTotal(res.totalItems)
+      } else {
+        setProducts([])
+        setTotal(0)
+        const errorMessage = (res as any)?.message ?? "Failed to load products"
+        toast({ title: "Error", description: errorMessage, variant: "destructive" })
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: "Failed to load products", variant: "destructive" })
+      setProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Gọi API khi page hoặc debouncedSearch thay đổi
+  useEffect(() => {
+    fetchProducts()
+  }, [page, debouncedSearch])
+
+
+  // Focus lại input sau khi loading xong
+  useEffect(() => {
+    if (!loading && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [loading])
+
+  // Xóa sản phẩm
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return
     try {
       await productService.deleteProduct(id)
-      toast({ title: "Deleted successfully", description: "The product has been removed." })
-      refresh()
+      toast({ title: "Success", description: "Product deleted successfully" })
+      fetchProducts()
     } catch (err) {
-      toast({ title: "Delete failed", description: "Something went wrong.", variant: "destructive" })
+      toast({ title: "Error", description: "Failed to delete product", variant: "destructive" })
     }
   }
 
@@ -75,8 +122,17 @@ export default function ProductList() {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price)
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div className="text-red-600">{error}</div>
+  if (loading && products.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-12">
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
@@ -88,13 +144,19 @@ export default function ProductList() {
             Add Product
           </Button>
         </div>
+
         <div className="flex items-center space-x-4 mt-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search products..."
+              ref={searchInputRef}
+              placeholder="Search products by name, category..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              // ✅ SỬA LẠI ĐOẠN NÀY
+              onChange={(e) => {
+                setSearchTerm(e.target.value) // Cập nhật từ khóa
+                setPage(1)                    // Chỉ reset về trang 1 khi người dùng gõ
+              }}
               className="pl-10"
             />
           </div>
@@ -114,7 +176,7 @@ export default function ProductList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.map((product) => (
+            {products.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>
                   <div className="flex items-center space-x-3">
@@ -156,12 +218,10 @@ export default function ProductList() {
                         <PackagePlus className="mr-2 h-4 w-4" />
                         Import goods
                       </DropdownMenuItem>
-
                       <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_INVENTORY_LIST(product.id))}>
                         <History className="mr-2 h-4 w-4" />
                         Import history
                       </DropdownMenuItem>
-
                       <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_DETAIL(product.id))}>
                         <Eye className="mr-2 h-4 w-4" />
                         View
@@ -176,35 +236,43 @@ export default function ProductList() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-
-                  {/* Dialog nhập kho mới */}
-                  <ProductInventoryDialog
-                    open={createDialogOpen}
-                    onOpenChange={setCreateDialogOpen}
-                    productId={selectedProductId ?? ""}   // truyền đúng ID đã chọn
-                    onSuccess={() => {
-                      setCreateDialogOpen(false)
-                      toast({ title: "Nhập kho thành công!" })
-                      refresh()
-                    }}
-                  />
-
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
 
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">No products found</div>
+        {products.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            {searchTerm ? "No products found for your search." : "No products yet."}
+          </div>
         )}
 
-        <div className="mt-6 flex justify-between items-center">
-          <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</Button>
-          <span>Page {page} of {Math.ceil(total / limit)}</span>
-          <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)}>Next</Button>
-        </div>
+        {total > 0 && (
+          <div className="mt-6 flex justify-between items-center">
+            <Button disabled={page <= 1 || loading} onClick={() => setPage(page - 1)}>
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {page} of {Math.ceil(total / limit)} ({total} products)
+            </span>
+            <Button disabled={page * limit >= total || loading} onClick={() => setPage(page + 1)}>
+              Next
+            </Button>
+          </div>
+        )}
       </CardContent>
+
+      <ProductInventoryDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        productId={selectedProductId ?? ""}
+        onSuccess={() => {
+          setCreateDialogOpen(false)
+          toast({ title: "Nhập kho thành công!" })
+          fetchProducts()
+        }}
+      />
     </Card>
   )
 }

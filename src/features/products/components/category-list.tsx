@@ -14,7 +14,7 @@ import { categoryService } from "@/entities/categories/services/category"
 import type { Category } from "@/entities/categories/types/category"
 import { CategoryFormDialog } from "./category-form-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { useDebounce } from "@/hooks/use-debounce"   // ← ĐÃ CÓ
+import { useDebounce } from "@/hooks/use-debounce"
 
 export function CategoryList() {
   const { toast } = useToast()
