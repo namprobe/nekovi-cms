@@ -21,6 +21,10 @@ export const ROUTES = {
   PRODUCT_DETAIL: (id: string) => `/dashboard/products/${id}`,
   PRODUCT_EDIT: (id: string) => `/dashboard/products/${id}/edit`,
   PRODUCT_CREATE: "/dashboard/products/create",
+
+  //Quản lý tồn kho của từng sản phẩm
+  PRODUCT_INVENTORY_LIST: (productId: string) => `/dashboard/products/${productId}/inventory`,
+
   CATEGORIES: "/dashboard/categories",
 
   // Order management

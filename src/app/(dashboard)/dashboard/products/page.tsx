@@ -1,3 +1,4 @@
+//src/app/(dashboard)/dashboard/products/page.tsx
 import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
 import ProductList from "@/features/products/components/product-list"
 

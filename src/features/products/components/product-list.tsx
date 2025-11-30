@@ -1,9 +1,8 @@
-//src/features/products/components/product-list.tsx
+// src/features/products/components/product-list.tsx
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { useProducts } from "@/features/products/hooks/use-products"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
@@ -11,12 +10,14 @@ import { Input } from "@/shared/ui/input"
 import { Badge } from "@/shared/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import { Plus, MoreHorizontal, Eye, Edit, Trash2, Search, Filter } from "lucide-react"
+import { Plus, MoreHorizontal, Eye, Edit, Trash2, Search, History, PackagePlus } from "lucide-react"
 import { ROUTES } from "@/core/config/routes"
 import { STATUS_VARIANTS } from "@/core/config/constants"
 import { productService } from "@/entities/products/services/product"
 import { useToast } from "@/hooks/use-toast"
+import ProductInventoryDialog from "@/features/product-inventory/product-inventory-dialog"
 
+// Không cần import useQueryClient nữa
 
 export default function ProductList() {
   const router = useRouter()
@@ -31,41 +32,34 @@ export default function ProductList() {
 
   const [filteredProducts, setFilteredProducts] = useState(items)
 
+  // State cho dialog nhập kho
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const { toast } = useToast()
+
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
+
   useEffect(() => {
     let filtered = items.filter(
       (p) =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.category?.name && p.category.name.toLowerCase().includes(searchTerm.toLowerCase()))
     )
-    // filter by category if needed
     if (selectedCategory !== "all") {
       filtered = filtered.filter((p) => p.category?.name?.toLowerCase() === selectedCategory.toLowerCase())
     }
     setFilteredProducts(filtered)
   }, [items, searchTerm, selectedCategory])
 
-  // Thêm hàm handleDelete
-  const { toast } = useToast()
-
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return
     try {
       await productService.deleteProduct(id)
-      toast({
-        title: "Deleted successfully",
-        description: "The product has been removed from the list.",
-      })
+      toast({ title: "Deleted successfully", description: "The product has been removed." })
       refresh()
     } catch (err) {
-      console.error("Delete product failed:", err)
-      toast({
-        title: "Delete failed",
-        description: "Something went wrong while deleting the product.",
-        variant: "destructive",
-      })
+      toast({ title: "Delete failed", description: "Something went wrong.", variant: "destructive" })
     }
   }
-
 
   const getStatusBadge = (status: number) => {
     const statusText = status === 1 ? "Active" : status === 0 ? "Inactive" : "Pending"
@@ -106,6 +100,7 @@ export default function ProductList() {
           </div>
         </div>
       </CardHeader>
+
       <CardContent>
         <Table>
           <TableHeader>
@@ -120,7 +115,6 @@ export default function ProductList() {
           </TableHeader>
           <TableBody>
             {filteredProducts.map((product) => (
-              console.log("Rendering product:", product), // Debug each product being rendered
               <TableRow key={product.id}>
                 <TableCell>
                   <div className="flex items-center space-x-3">
@@ -128,12 +122,10 @@ export default function ProductList() {
                       <img
                         src={product.primaryImage || "/placeholder.svg"}
                         alt={product.name}
-                        className="object-cover"
+                        className="object-cover w-full h-full"
                       />
                     </div>
-                    <div>
-                      <div className="font-medium">{product.name}</div>
-                    </div>
+                    <div className="font-medium">{product.name}</div>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -158,8 +150,19 @@ export default function ProductList() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => {
-                        router.push(ROUTES.PRODUCT_DETAIL(product.id))
+                        setSelectedProductId(product.id)
+                        setCreateDialogOpen(true)
                       }}>
+                        <PackagePlus className="mr-2 h-4 w-4" />
+                        Import goods
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_INVENTORY_LIST(product.id))}>
+                        <History className="mr-2 h-4 w-4" />
+                        Import history
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_DETAIL(product.id))}>
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </DropdownMenuItem>
@@ -173,6 +176,19 @@ export default function ProductList() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
+                  {/* Dialog nhập kho mới */}
+                  <ProductInventoryDialog
+                    open={createDialogOpen}
+                    onOpenChange={setCreateDialogOpen}
+                    productId={selectedProductId ?? ""}   // truyền đúng ID đã chọn
+                    onSuccess={() => {
+                      setCreateDialogOpen(false)
+                      toast({ title: "Nhập kho thành công!" })
+                      refresh()
+                    }}
+                  />
+
                 </TableCell>
               </TableRow>
             ))}
@@ -180,21 +196,13 @@ export default function ProductList() {
         </Table>
 
         {filteredProducts.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No products found</p>
-          </div>
+          <div className="text-center py-8 text-muted-foreground">No products found</div>
         )}
 
-        <div className="mt-4 flex justify-between items-center">
-          <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            Prev
-          </Button>
-          <span>
-            Page {page} of {Math.ceil(total / limit)}
-          </span>
-          <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)}>
-            Next
-          </Button>
+        <div className="mt-6 flex justify-between items-center">
+          <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</Button>
+          <span>Page {page} of {Math.ceil(total / limit)}</span>
+          <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)}>Next</Button>
         </div>
       </CardContent>
     </Card>

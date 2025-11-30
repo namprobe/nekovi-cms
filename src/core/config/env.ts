@@ -46,6 +46,9 @@ export const env = {
             DELETE: (id: string) => `${CMS_PREFIX}/products/${id}`, // DELETE
             UPLOAD_IMAGE: `${CMS_PREFIX}/product-image`, // POST upload ảnh
         },
+        PRODUCT_IMAGE: {
+            CREATE: `/product-image`,
+        },
         CATEGORY: {
             SELECT_LIST: `/categories/select-list`,
             LIST: `/categories`,
@@ -90,7 +93,14 @@ export const env = {
             CREATE: `/home-images`,
             UPDATE: (id: string) => `/home-images/${id}`,
             DELETE: (id: string) => `/home-images/${id}`,
-        }
+        },
+        PRODUCT_INVENTORY: {
+            LIST: `/product-inventory`,
+            DETAIL: (id: string) => `/product-inventory/${id}`,
+            CREATE: `/product-inventory`,
+            UPDATE: (id: string) => `/product-inventory/${id}`,
+            DELETE: (id: string) => `/product-inventory/${id}`,
+        },
     }
 } as const;
 
