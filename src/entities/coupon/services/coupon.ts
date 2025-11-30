@@ -3,29 +3,31 @@ import { apiClient } from "@/core/lib/api-client"
 import type { Coupon } from "../types/coupon"
 import { ApiResult } from "@/shared/types/common"
 
-// ✅ Thêm interface cho CreateCouponRequest
+// ✅ Thêm interface cho CreateCouponRequest (PascalCase for C# backend)
 export interface CreateCouponRequest {
-  code: string
-  description?: string
-  discountType: number
-  discountValue: number
-  minOrderAmount: number
-  startDate: string
-  endDate: string
-  usageLimit?: number
-  status: number
+  Code: string
+  Description?: string
+  DiscountType: number
+  DiscountValue: number
+  MaxDiscountCap?: number | null
+  MinOrderAmount: number
+  StartDate: string
+  EndDate: string
+  UsageLimit?: number
+  Status: number
 }
 
 export interface UpdateCouponRequest {
-  code: string
-  description?: string
-  discountType: number
-  discountValue: number
-  minOrderAmount: number
-  startDate: string
-  endDate: string
-  usageLimit?: number
-  status: number
+  Code: string
+  Description?: string
+  DiscountType: number
+  DiscountValue: number
+  MaxDiscountCap?: number | null
+  MinOrderAmount: number
+  StartDate: string
+  EndDate: string
+  UsageLimit?: number
+  Status: number
 }
 
 export const couponService = {

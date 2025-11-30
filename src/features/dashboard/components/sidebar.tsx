@@ -1,3 +1,4 @@
+//src/features/dashboard/components/sidebar.tsx
 "use client"
 
 import { useState } from "react"
@@ -22,6 +23,7 @@ import {
   icons,
   Ticket,
   Badge,
+  ImageIcon,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -61,6 +63,7 @@ const navigation = [
     children: [
       { name: "All Posts", href: ROUTES.BLOG_POSTS },
       { name: "Create Post", href: ROUTES.BLOG_POST_CREATE },
+      { name: "Post Categories", href: ROUTES.POST_CATEGORIES },
     ],
   },
   {
@@ -70,6 +73,15 @@ const navigation = [
     children: [
       { name: "All Events", href: ROUTES.EVENTS },
       { name: "Create Event", href: ROUTES.EVENT_CREATE },
+    ],
+  },
+  {
+    name: "Home Images",
+    href: ROUTES.HOME_IMAGES,
+    icon: ImageIcon,
+    children: [
+      { name: "All Images", href: ROUTES.HOME_IMAGES },
+      { name: "Add New", href: ROUTES.HOME_IMAGE_CREATE },
     ],
   },
   {

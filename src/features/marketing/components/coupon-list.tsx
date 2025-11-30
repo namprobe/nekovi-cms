@@ -67,14 +67,32 @@ export function CouponList() {
   }
 
   const getDiscountTypeText = (discountType: number) => {
-    return discountType === 1 ? "Percentage" : "Fixed Amount"
+    switch (discountType) {
+      case 0:
+        return "Percentage"
+      case 1:
+        return "Fixed Amount"
+      case 2:
+        return "Free Shipping"
+      default:
+        return "Unknown"
+    }
   }
 
   const formatDiscount = (coupon: Coupon) => {
-    if (coupon.discountType === 1) {
-      return `${coupon.discountValue}%`
-    } else {
+    if (coupon.discountType === 0) {
+      // Percentage
+      const discountText = `${coupon.discountValue}%`
+      if (coupon.maxDiscountCap && coupon.maxDiscountCap > 0) {
+        return `${discountText} (max $${coupon.maxDiscountCap.toFixed(2)})`
+      }
+      return discountText
+    } else if (coupon.discountType === 1) {
+      // Fixed Amount
       return `$${coupon.discountValue.toFixed(2)}`
+    } else {
+      // Free Shipping
+      return "Free Shipping"
     }
   }
 
@@ -122,40 +140,85 @@ export function CouponList() {
 
   // Trong coupon-list.tsx - SỬA handleSave function
 const handleSave = async (formData: FormData, isEdit: boolean, id?: string) => {
-  try {
-    // ✅ CONVERT FormData thành JSON object
-    const jsonData = {
-      code: formData.get("Code") as string,
-      description: formData.get("Description") as string || undefined,
-      discountType: parseInt(formData.get("DiscountType") as string),
-      discountValue: parseFloat(formData.get("DiscountValue") as string),
-      minOrderAmount: parseFloat(formData.get("MinOrderAmount") as string),
-      startDate: formData.get("StartDate") as string,
-      endDate: formData.get("EndDate") as string,
-      usageLimit: formData.get("UsageLimit") ? parseInt(formData.get("UsageLimit") as string) : undefined,
-      status: parseInt(formData.get("Status") as string),
-    }
+  // ✅ CONVERT FormData to JSON with PascalCase for C# backend
+  const jsonData = {
+    Code: formData.get("Code") as string,
+    Description: formData.get("Description") as string || undefined,
+    DiscountType: parseInt(formData.get("DiscountType") as string),
+    DiscountValue: parseFloat(formData.get("DiscountValue") as string),
+    MaxDiscountCap: formData.get("MaxDiscountCap") && (formData.get("MaxDiscountCap") as string).trim() 
+      ? parseFloat(formData.get("MaxDiscountCap") as string) 
+      : undefined,
+    MinOrderAmount: parseFloat(formData.get("MinOrderAmount") as string),
+    StartDate: formData.get("StartDate") as string,
+    EndDate: formData.get("EndDate") as string,
+    UsageLimit: formData.get("UsageLimit") ? parseInt(formData.get("UsageLimit") as string) : undefined,
+    Status: parseInt(formData.get("Status") as string),
+  }
 
-    console.log("📤 Sending JSON data:", jsonData) // Debug
+  console.log("📤 Sending JSON data with PascalCase:", jsonData) // Debug
 
-    if (isEdit && id) {
-      await couponService.updateCoupon(id, jsonData)
-      toast({ title: "Success", description: "Coupon updated successfully" })
-    } else {
-      await couponService.createCoupon(jsonData)
-      toast({ title: "Success", description: "Coupon created successfully" })
+  let result
+  if (isEdit && id) {
+    result = await couponService.updateCoupon(id, jsonData)
+  } else {
+    result = await couponService.createCoupon(jsonData)
+  }
+
+  // ✅ Check if the API call was successful
+  if (!result.isSuccess) {
+    console.log("❌ API Error Response:", result) // Debug: see full error structure
+    
+    // Extract validation errors from backend response
+    let errorMessage = "Failed to save coupon"
+    
+    // Sometimes the backend wraps the error as a JSON string in the message field
+    if (result.message && typeof result.message === 'string' && result.message.includes('"errors"')) {
+      try {
+        const parsed = JSON.parse(result.message)
+        if (parsed.errors && typeof parsed.errors === 'object') {
+          const errorFields = Object.keys(parsed.errors)
+          if (errorFields.length > 0) {
+            const messages = parsed.errors[errorFields[0]]
+            if (Array.isArray(messages) && messages.length > 0) {
+              errorMessage = messages[0]
+            }
+          }
+        }
+      } catch (e) {
+        // If parsing fails, try the normal path
+      }
     }
     
-    setIsDialogOpen(false)
-    await fetchCoupons()
-  } catch (error: any) {
-    console.error("Save error:", error)
-    toast({ 
-      title: "Error", 
-      description: error.message || "Failed to save coupon", 
-      variant: "destructive" 
-    })
+    // Check for C# validation errors format: { errors: { field: [messages] } }
+    if (errorMessage === "Failed to save coupon" && result.errors && typeof result.errors === 'object' && !Array.isArray(result.errors)) {
+      const errorFields = Object.keys(result.errors)
+      if (errorFields.length > 0) {
+        const messages = (result.errors as Record<string, unknown>)[errorFields[0]]
+        if (Array.isArray(messages) && messages.length > 0) {
+          errorMessage = String(messages[0])
+        }
+      }
+    }
+    
+    // Fallback to result.message if we still haven't found anything
+    if (errorMessage === "Failed to save coupon" && result.message && typeof result.message === 'string' && !result.message.includes('{')) {
+      errorMessage = result.message
+    }
+    
+    console.log("📢 Extracted error message:", errorMessage) // Debug
+    
+    // Throw error to be caught by dialog component
+    throw new Error(errorMessage)
   }
+
+  // Success - show toast and refresh
+  toast({ 
+    title: "Success", 
+    description: isEdit ? "Coupon updated successfully" : "Coupon created successfully" 
+  })
+  setIsDialogOpen(false)
+  await fetchCoupons()
 }
 
   if (loading) {

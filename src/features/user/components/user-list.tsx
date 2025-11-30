@@ -156,7 +156,7 @@ export default function UserList() {
                     {user.roles.map((role, index) => (
                       <Badge key={index} 
                         variant="outline" className="text-xs">
-                        {role}
+                        {typeof role === 'string' ? role : role.name}
                       </Badge>
                     ))}
                   </div>

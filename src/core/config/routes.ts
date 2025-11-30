@@ -1,3 +1,4 @@
+//src/core/config/routes.ts
 export const ROUTES = {
   // Public routes
   HOME: "/",
@@ -9,8 +10,8 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
 
   // User management
-   USERS: "/dashboard/users",
-  USER_CREATE: "/dashboard/users/create", 
+  USERS: "/dashboard/users",
+  USER_CREATE: "/dashboard/users/create",
   USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
   USER_EDIT: (id: string) => `/dashboard/users/${id}/edit`,
 
@@ -30,12 +31,24 @@ export const ROUTES = {
   BLOG_POSTS: "/dashboard/blog",
   BLOG_POST_DETAIL: (id: string) => `/dashboard/blog/${id}`,
   BLOG_POST_CREATE: "/dashboard/blog/create",
+  BLOG_POST_EDIT: (id: string) => `/dashboard/blog/${id}/edit`,
+
+  //POST CATEGORIES
+  POST_CATEGORIES: "/dashboard/post-categories",
+  POST_CATEGORY_CREATE: "/dashboard/post-categories/create",
+  POST_CATEGORY_DETAIL: (id: string) => `/dashboard/post-categories/${id}`,
+  POST_CATEGORY_EDIT: (id: string) => `/dashboard/post-categories/${id}/edit`,
 
   // Event management
   EVENTS: "/dashboard/events",
   EVENT_DETAIL: (id: string) => `/dashboard/events/${id}`,
   EVENT_EDIT: (id: string) => `/dashboard/events/${id}/edit`,
   EVENT_CREATE: "/dashboard/events/create",
+
+  //Home Images
+  HOME_IMAGES: "/dashboard/home-images",
+  HOME_IMAGE_CREATE: "/dashboard/home-images/create",
+  HOME_IMAGE_EDIT: (id: string) => `/dashboard/home-images/${id}`,
 
   // Marketing
   MARKETING: "/dashboard/marketing",
@@ -49,7 +62,7 @@ export const ROUTES = {
 
   // Reports
   REPORTS: "/dashboard/reports",
-  
+
   // Settings
   SETTINGS: "/dashboard/settings",
   PROFILE: "/dashboard/profile",

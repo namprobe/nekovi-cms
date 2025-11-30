@@ -1,3 +1,4 @@
+// src/features/products/components/category-form-dialog.tsx
 "use client"
 
 import { useState, useEffect, useCallback } from "react"

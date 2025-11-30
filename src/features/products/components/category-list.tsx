@@ -1,5 +1,7 @@
+// src/features/products/components/category-list.tsx
 "use client"
-import { useState, useEffect } from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
@@ -12,19 +14,23 @@ import { categoryService } from "@/entities/categories/services/category"
 import type { Category } from "@/entities/categories/types/category"
 import { CategoryFormDialog } from "./category-form-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { useDebounce } from "@/hooks/use-debounce"   // ← ĐÃ CÓ
 
 export function CategoryList() {
   const { toast } = useToast()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")                    // ← UI input
+  const debouncedSearch = useDebounce(searchTerm, 400)               // ← debounce
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
 
-  // 🧩 Thêm các state cho phân trang
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
   const [total, setTotal] = useState(0)
+
+  // ← Thêm ref để focus
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const fetchCategories = async () => {
     try {
@@ -32,10 +38,9 @@ export function CategoryList() {
       const response = await categoryService.getCategories({
         page,
         limit,
-        search: searchTerm,
+        search: debouncedSearch || undefined,
       })
 
-      // ✅ Đảm bảo phản hồi có cấu trúc { items, total }
       setCategories(response.items || [])
       setTotal(response.totalItems || 0)
     } catch (error: any) {
@@ -46,10 +51,22 @@ export function CategoryList() {
     }
   }
 
-  // Gọi API khi page, limit, hoặc searchTerm thay đổi
+  // Gọi API khi page hoặc debouncedSearch thay đổi
   useEffect(() => {
     fetchCategories()
-  }, [page, limit, searchTerm])
+  }, [page, debouncedSearch])
+
+  // Reset page về 1 khi người dùng gõ (trước khi debounce)
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm])
+
+  // ← Focus lại input khi loading xong
+  useEffect(() => {
+    if (!loading && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [loading])
 
   const getStatusBadge = (status: number) => {
     const statusText = status === 1 ? "Active" : status === 0 ? "Inactive" : "Pending"
@@ -127,12 +144,10 @@ export function CategoryList() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
+              ref={searchInputRef}  // ← Thêm ref
               placeholder="Search categories..."
               value={searchTerm}
-              onChange={(e) => {
-                setPage(1) // reset page khi tìm kiếm mới
-                setSearchTerm(e.target.value)
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}   // ← Chỉ cập nhật UI
               className="pl-10"
             />
           </div>
@@ -200,7 +215,6 @@ export function CategoryList() {
           </div>
         )}
 
-        {/* ✅ Thêm phân trang giống product-list */}
         <div className="mt-4 flex justify-between items-center">
           <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>
             Prev
