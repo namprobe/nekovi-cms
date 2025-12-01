@@ -150,10 +150,24 @@ class ApiClient {
 
       // Error response - match with backend Result pattern
       const apiError = isApiResponse(responseData) ? responseData : {}
+      
+      // Handle C# Problem Details format (validation errors)
+      const responseObj = responseData as any
+      
+      console.log("🔍 API Client - Raw response data:", responseObj) // Debug
+      
+      let errors = apiError.errors || []
+      
+      // Check if it's C# validation error format: { errors: { field: [messages] } }
+      if (responseObj && typeof responseObj.errors === 'object' && !Array.isArray(responseObj.errors)) {
+        errors = responseObj.errors
+        console.log("✅ Found C# validation errors:", errors) // Debug
+      }
+      
       return {
         isSuccess: false,
-        message: apiError.message || `HTTP ${response.status}: ${response.statusText}`,
-        errors: apiError.errors || [],
+        message: responseObj?.title || apiError.message || `HTTP ${response.status}: ${response.statusText}`,
+        errors: errors,
         errorCode: apiError.errorCode || response.status.toString(),
       }
     } catch (error) {
