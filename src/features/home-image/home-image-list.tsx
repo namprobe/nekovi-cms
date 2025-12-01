@@ -1,7 +1,7 @@
 // src/features/home-image/home-image-list.tsx
 "use client"
 import { useEffect, useState, useRef } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation" // 1. Hooks navigation
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Pencil, Trash2, Plus, Image as ImageIcon, Search } from "lucide-react"
 import { Button } from "@/shared/ui/button"
@@ -17,6 +17,8 @@ import { ROUTES } from "@/core/config/routes"
 import { useDebounce } from "@/hooks/use-debounce"
 import { AsyncSelect, type Option } from "@/shared/ui/selects/async-select"
 import { useAnimeSeriesSelectStore } from "@/entities/anime-series/services/anime-series-select-service"
+// 1. Import service để lấy chi tiết anime (cần hàm getById hoặc getDetail)
+import { animeSeriesService } from "@/entities/anime-series/services/anime-series"
 
 export function HomeImageList() {
     const { toast } = useToast()
@@ -24,12 +26,11 @@ export function HomeImageList() {
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    // 2. Parse URL Params để khởi tạo State
+    // Parse URL Params
     const initialPage = Number(searchParams.get("page")) || 1
     const initialSearch = searchParams.get("search") || ""
     const initialAnimeSeriesId = searchParams.get("animeSeriesId") || ""
 
-    // Parse logic cho hasAnimeSeries ("true" | "false" | null)
     let initialHasAnime: boolean | null = null
     const paramHasAnime = searchParams.get("hasAnimeSeries")
     if (paramHasAnime === "true") initialHasAnime = true
@@ -39,12 +40,15 @@ export function HomeImageList() {
     const [loading, setLoading] = useState(true)
     const [total, setTotal] = useState(0)
 
-    // Filters (Khởi tạo từ URL)
+    // Filters
     const [searchTerm, setSearchTerm] = useState(initialSearch)
     const debouncedSearch = useDebounce(searchTerm, 400)
 
     const [animeSeriesId, setAnimeSeriesId] = useState<string>(initialAnimeSeriesId)
     const [hasAnimeSeries, setHasAnimeSeries] = useState<boolean | null>(initialHasAnime)
+
+    // 2. State lưu option object { id, label } để hiển thị tên ngay lập tức
+    const [selectedAnimeOption, setSelectedAnimeOption] = useState<Option | null>(null)
 
     const [page, setPage] = useState(initialPage)
     const limit = 20
@@ -52,16 +56,43 @@ export function HomeImageList() {
     const searchInputRef = useRef<HTMLInputElement>(null)
     const { fetchOptions: fetchAnimeOptions } = useAnimeSeriesSelectStore()
 
-    // 3. Effect: Đồng bộ State lên URL
+    // 3. Effect: Fetch tên Anime khi có ID từ URL (chạy 1 lần khi mount)
+    useEffect(() => {
+        const fetchInitialAnimeLabel = async () => {
+            if (!initialAnimeSeriesId) return
+
+            try {
+                // Gọi API lấy chi tiết anime series theo ID
+                // Giả sử service có hàm getById hoặc getDetail
+                const result = await animeSeriesService.getById(initialAnimeSeriesId)
+
+                // Kiểm tra result tùy theo cấu trúc trả về của API bên bạn (ví dụ: result.data hoặc result trực tiếp)
+                // Đây là ví dụ chung:
+                const animeData = (result as any)?.data || result
+
+                if (animeData && animeData.title) {
+                    setSelectedAnimeOption({
+                        id: initialAnimeSeriesId,
+                        label: animeData.title // Lấy tên hiển thị
+                    })
+                }
+            } catch (error) {
+                console.error("Failed to fetch initial anime label", error)
+            }
+        }
+
+        fetchInitialAnimeLabel()
+    }, [initialAnimeSeriesId])
+
+
+    // Effect: Đồng bộ State lên URL
     useEffect(() => {
         const params = new URLSearchParams()
-
         if (page > 1) params.set("page", page.toString())
         if (debouncedSearch) params.set("search", debouncedSearch)
         if (animeSeriesId) params.set("animeSeriesId", animeSeriesId)
         if (hasAnimeSeries !== null) params.set("hasAnimeSeries", hasAnimeSeries.toString())
 
-        // scroll: false để giữ vị trí màn hình khi filter
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [page, debouncedSearch, animeSeriesId, hasAnimeSeries, pathname, router])
 
@@ -88,20 +119,11 @@ export function HomeImageList() {
                 setImages(result.items)
                 setTotal(result.totalItems)
             } else {
-                toast({
-                    title: "Error",
-                    description: (result as any).message || result.errors?.[0] || "Failed to load images",
-                    variant: "destructive"
-                })
                 setImages([])
                 setTotal(0)
             }
         } catch (err: any) {
-            toast({
-                title: "Error",
-                description: "Network error. Please check your connection.",
-                variant: "destructive"
-            })
+            toast({ title: "Error", description: "Network error.", variant: "destructive" })
             setImages([])
             setTotal(0)
         } finally {
@@ -109,37 +131,25 @@ export function HomeImageList() {
         }
     }
 
-    // Fetch data khi filter thay đổi
     useEffect(() => {
         fetchImages()
     }, [page, debouncedSearch, animeSeriesId, hasAnimeSeries])
 
-    // Focus lại input khi loading xong (nếu đang có search term)
     useEffect(() => {
         if (!loading && searchInputRef.current && searchTerm) {
             searchInputRef.current.focus()
         }
     }, [loading])
 
-    // ❌ ĐÃ XÓA: useEffect reset page tự động
-    // Thay vào đó, setPage(1) nằm trong các sự kiện onChange bên dưới
-
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this image?")) return
-
         const res = await homeImageService.delete(id)
         if (res.isSuccess) {
             toast({ title: "Success", description: "Image deleted successfully!" })
             setImages(prev => prev.filter(i => i.id !== id))
-            if (images.length === 1 && page > 1) {
-                setPage(p => p - 1)
-            }
+            if (images.length === 1 && page > 1) setPage(p => p - 1)
         } else {
-            toast({
-                title: "Error",
-                description: res.message || res.errors?.[0] || "Delete failed",
-                variant: "destructive"
-            })
+            toast({ title: "Error", description: "Delete failed", variant: "destructive" })
         }
     }
 
@@ -155,7 +165,6 @@ export function HomeImageList() {
 
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-3xl font-bold">Home Images</h1>
                 <Button asChild>
@@ -165,7 +174,6 @@ export function HomeImageList() {
                 </Button>
             </div>
 
-            {/* Filters */}
             <div className="space-y-4 bg-muted/50 p-5 rounded-lg border">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative">
@@ -174,7 +182,6 @@ export function HomeImageList() {
                             ref={searchInputRef}
                             placeholder="Search by image name..."
                             value={searchTerm}
-                            // 4. Reset page = 1 tại đây
                             onChange={(e) => {
                                 setSearchTerm(e.target.value)
                                 setPage(1)
@@ -185,19 +192,22 @@ export function HomeImageList() {
 
                     <div>
                         <AsyncSelect
+                            // 4. Truyền initialSelectedOption vào
+                            key={selectedAnimeOption?.id || "empty"} // Tip: key giúp force re-render nếu option load chậm
                             value={animeSeriesId}
-                            // 4. Reset page = 1 tại đây
+                            initialSelectedOption={selectedAnimeOption}
                             onChange={(val) => {
                                 setAnimeSeriesId(val)
                                 if (val) setHasAnimeSeries(null)
+
+                                // Reset selectedAnimeOption nếu user xóa chọn
+                                if (!val) setSelectedAnimeOption(null)
+
                                 setPage(1)
                             }}
                             fetchOptions={fetchAnimeSeriesOptions}
                             placeholder="All Series"
                             clearable={true}
-                        // Lưu ý: Nếu muốn hiển thị label đúng ngay khi reload trang, 
-                        // AsyncSelect cần prop `initialSelectedOption` hoặc tự fetch label dựa vào animeSeriesId.
-                        // Với code hiện tại, nó sẽ hoạt động nhưng có thể hiển thị ID hoặc trống lúc đầu cho đến khi user tương tác.
                         />
                     </div>
 
@@ -205,11 +215,13 @@ export function HomeImageList() {
                         <Checkbox
                             id="no-series"
                             checked={hasAnimeSeries === false}
-                            // 4. Reset page = 1 tại đây
                             onCheckedChange={(checked) => {
                                 const value = checked ? false : null
                                 setHasAnimeSeries(value)
-                                if (value === false) setAnimeSeriesId("")
+                                if (value === false) {
+                                    setAnimeSeriesId("")
+                                    setSelectedAnimeOption(null) // Reset tên hiển thị
+                                }
                                 setPage(1)
                             }}
                         />
@@ -261,6 +273,7 @@ export function HomeImageList() {
     )
 }
 
+// ... Giữ nguyên MasonryImageCard và SkeletonCard
 function MasonryImageCard({ image, onDelete }: { image: HomeImageListItem; onDelete: () => void }) {
     const [hovered, setHovered] = useState(false)
 

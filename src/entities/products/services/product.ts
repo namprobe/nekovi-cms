@@ -3,8 +3,6 @@ import { apiClient } from "@/core/lib/api-client"
 import type {
     Product,
     ProductListItem,
-    CreateProductDto,
-    UpdateProductDto
 } from "@/entities/products/types/product"
 import type { PaginateResult, ApiResult } from "@/shared/types/common"
 

@@ -15,6 +15,11 @@ export const ROUTES = {
   USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
   USER_EDIT: (id: string) => `/dashboard/users/${id}/edit`,
 
+  // Anime Series management
+  ANIME_SERIES: "/dashboard/anime-series",
+  ANIME_SERIES_CREATE: "/dashboard/anime-series/create",
+  ANIME_SERIES_EDIT: (id: string) => `/dashboard/anime-series/${id}/edit`,
+  ANIME_SERIES_DETAIL: (id: string) => `/dashboard/anime-series/${id}`,
 
   // Product management
   PRODUCTS: "/dashboard/products",

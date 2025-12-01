@@ -57,7 +57,7 @@ export const env = {
             UPDATE: (id: string) => `/categories/${id}`, // PUT/PATCH
             DELETE: (id: string) => `/categories/${id}`, // DELETE
         },
-        ANIME: {
+        ANIME_SERIES: {
             SELECT_LIST: `/anime-series/select-list`,
             LIST: `/anime-series`,
             DETAIL: (id: string) => `/anime-series/${id}`,

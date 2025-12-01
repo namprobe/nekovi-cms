@@ -120,7 +120,8 @@ export default function ProductList() {
   }
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price)
+    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price)
+
 
   if (loading && products.length === 0) {
     return (
@@ -194,7 +195,33 @@ export default function ProductList() {
                   <Badge variant="outline">{product.category?.name || "No Category"}</Badge>
                 </TableCell>
                 <TableCell>
-                  <span className="font-medium">{formatPrice(product.price)}</span>
+                  {product.discountPrice != null && product.discountPrice > 0 && product.discountPrice < product.price ? (
+                    <div className="flex items-end gap-2 flex-wrap">
+                      {/* Giá gốc - bị gạch ngang */}
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(product.price)}
+                      </span>
+
+                      {/* Giá thực tế khách trả = price - discountPrice */}
+                      <span className="font-bold text-lg text-red-600">
+                        {formatPrice(product.price - product.discountPrice)}
+                      </span>
+
+                      {/* Badge giảm giá - ưu tiên % nếu >=5%, không thì hiện số tiền giảm */}
+                      <Badge variant="destructive" className="text-xs">
+                        {(() => {
+                          const discountAmount = product.discountPrice
+                          const discountPercent = Math.round((discountAmount / product.price) * 100)
+
+                          return `- ${formatPrice(discountAmount).replace("₫", "").trim()}₫`
+
+                        })()}
+                      </Badge>
+                    </div>
+                  ) : (
+                    /* Không có giảm giá */
+                    <span className="font-medium">{formatPrice(product.price)}</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col space-y-1">
