@@ -136,9 +136,9 @@ export function LoginForm() {
             </Label>
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full h-10 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-colors" 
+          <Button
+            type="submit"
+            className="w-full h-10 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium transition-colors"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -166,7 +166,7 @@ export function LoginForm() {
 
         {/* Footer */}
         <div className="text-center pt-3 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-muted-foreground">© 2024 Anime CMS. Secure admin system.</p>
+          <p className="text-xs text-muted-foreground">© 2024 NekoVi CMS. Secure admin system.</p>
         </div>
       </CardContent>
     </Card>

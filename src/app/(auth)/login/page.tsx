@@ -10,7 +10,7 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4zM9 3v1h6V3H9zm2 4v8m4-8v8" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Anime CMS</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">NekoVi CMS</h1>
           <p className="text-sm text-gray-600 dark:text-gray-300">Content Management System</p>
         </div>
         <LoginForm />
