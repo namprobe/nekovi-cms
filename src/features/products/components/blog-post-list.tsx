@@ -40,6 +40,7 @@ import { ROUTES } from "@/core/config/routes"
 import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
 import { toast } from "sonner"
 import { useDebounce } from "@/hooks/use-debounce"
+import { usePostCategoryFilterOption } from "@/entities/post-category/hooks/usePostCategoryFilterOption"
 
 const PUBLISH_STATUS_OPTIONS = [
   { value: "all", label: "All Posts" },
@@ -54,7 +55,7 @@ export function BlogPostList() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Đọc từ URL
+  // 1. Đọc state ban đầu từ URL
   const initialPage = Number(searchParams.get("page")) || 1
   const initialSearch = searchParams.get("search") || ""
   const initialCategory = searchParams.get("category") || ""
@@ -74,17 +75,16 @@ export function BlogPostList() {
   const [totalItems, setTotalItems] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  // Delete dialog
+  // Dialogs
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [publishingId, setPublishingId] = useState<string | null>(null)
 
-
-
   const searchInputRef = useRef<HTMLInputElement>(null)
   const fetchCategoryOptions = usePostCategoryOptions()
+  const { selectedOption: initialCategoryOption } = usePostCategoryFilterOption(initialCategory)
 
-  // Cập nhật URL
+  // 2. Cập nhật URL khi state thay đổi
   const updateUrl = useCallback(() => {
     const params = new URLSearchParams()
 
@@ -94,19 +94,18 @@ export function BlogPostList() {
     if (selectedPublishStatus !== "all") params.set("status", selectedPublishStatus)
 
     const query = params.toString()
-    router.replace(`${pathname}${query ? `?${query}` : ""}`)
+    // Dùng replace để không tạo thêm history entry thừa, scroll false để ko bị nhảy trang
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false })
   }, [page, debouncedSearch, selectedCategoryId, selectedPublishStatus, pathname, router])
 
-  // Khi bất kỳ filter nào thay đổi → reset page = 1 và update URL
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch, selectedCategoryId, selectedPublishStatus])
-
+  // Effect sync URL
   useEffect(() => {
     updateUrl()
   }, [updateUrl])
 
-  // Fetch posts
+  // 3. XÓA BỎ useEffect reset page tự động tại đây (đã xóa)
+
+  // 4. Fetch posts
   const fetchPosts = useCallback(async () => {
     setLoading(true)
 
@@ -143,16 +142,15 @@ export function BlogPostList() {
     fetchPosts()
   }, [fetchPosts])
 
-  // Focus input sau khi load
+  // Focus input sau khi load (chỉ focus nếu có search term để tránh khó chịu)
   useEffect(() => {
-    if (!loading && searchInputRef.current) {
+    if (!loading && searchInputRef.current && searchTerm) {
       searchInputRef.current.focus()
     }
   }, [loading])
 
   const totalPages = Math.ceil(totalItems / PAGE_SIZE)
 
-  // Category options với "All"
   const fetchOptionsWithAll = async (search: string): Promise<Option[]> => {
     const options = await fetchCategoryOptions(search)
     const allOption: Option = { id: "all", label: "All Categories" }
@@ -163,7 +161,6 @@ export function BlogPostList() {
   const handleTogglePublish = async (postId: string, current: boolean) => {
     if (publishingId === postId) return
     setPublishingId(postId)
-
     try {
       const result = await blogPostService.publishBlogPost(postId, !current)
       if (result.isSuccess) {
@@ -209,8 +206,7 @@ export function BlogPostList() {
   const formatDate = (date: string | Date) =>
     new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(date))
 
-  // Loading UI
-  if (loading) {
+  if (loading && posts.length === 0) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -249,25 +245,43 @@ export function BlogPostList() {
               ref={searchInputRef}
               placeholder="Search posts..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              // 5. Reset Page = 1 khi gõ
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setPage(1)
+              }}
               className="pl-10"
             />
           </div>
 
-          {/* Category */}
+          {/* Category Filter */}
           <div className="w-full sm:w-64">
             <AsyncSelect
               value={selectedCategoryId || "all"}
-              onChange={(val) => setSelectedCategoryId(val === "all" ? "" : val)}
+              // 6. Reset Page = 1 khi đổi category
+              onChange={(val) => {
+                setSelectedCategoryId(val === "all" ? "" : val)
+                setPage(1)
+              }}
               fetchOptions={fetchOptionsWithAll}
-              placeholder="Category"
+              placeholder="All Categories"
+              clearable={false}
+              initialSelectedOption={
+                selectedCategoryId && selectedCategoryId !== "all"
+                  ? initialCategoryOption
+                  : { id: "all", label: "All Categories" }
+              }
             />
           </div>
 
           {/* Publish status */}
           <select
             value={selectedPublishStatus}
-            onChange={(e) => setSelectedPublishStatus(e.target.value)}
+            // 7. Reset Page = 1 khi đổi status
+            onChange={(e) => {
+              setSelectedPublishStatus(e.target.value)
+              setPage(1)
+            }}
             className="px-4 py-2 border rounded-md text-sm"
           >
             {PUBLISH_STATUS_OPTIONS.map((opt) => (

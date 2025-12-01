@@ -1,6 +1,7 @@
 // src/features/home-image/home-image-list.tsx
 "use client"
 import { useEffect, useState, useRef } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation" // 1. Hooks navigation
 import { motion, AnimatePresence } from "framer-motion"
 import { Pencil, Trash2, Plus, Image as ImageIcon, Search } from "lucide-react"
 import { Button } from "@/shared/ui/button"
@@ -19,25 +20,51 @@ import { useAnimeSeriesSelectStore } from "@/entities/anime-series/services/anim
 
 export function HomeImageList() {
     const { toast } = useToast()
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    // 2. Parse URL Params để khởi tạo State
+    const initialPage = Number(searchParams.get("page")) || 1
+    const initialSearch = searchParams.get("search") || ""
+    const initialAnimeSeriesId = searchParams.get("animeSeriesId") || ""
+
+    // Parse logic cho hasAnimeSeries ("true" | "false" | null)
+    let initialHasAnime: boolean | null = null
+    const paramHasAnime = searchParams.get("hasAnimeSeries")
+    if (paramHasAnime === "true") initialHasAnime = true
+    if (paramHasAnime === "false") initialHasAnime = false
 
     const [images, setImages] = useState<HomeImageListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [total, setTotal] = useState(0)
 
-    // Filters
-    const [searchTerm, setSearchTerm] = useState("")
+    // Filters (Khởi tạo từ URL)
+    const [searchTerm, setSearchTerm] = useState(initialSearch)
     const debouncedSearch = useDebounce(searchTerm, 400)
 
-    const [animeSeriesId, setAnimeSeriesId] = useState<string>("")
-    const [hasAnimeSeries, setHasAnimeSeries] = useState<boolean | null>(null)
+    const [animeSeriesId, setAnimeSeriesId] = useState<string>(initialAnimeSeriesId)
+    const [hasAnimeSeries, setHasAnimeSeries] = useState<boolean | null>(initialHasAnime)
 
-    const [page, setPage] = useState(1)
+    const [page, setPage] = useState(initialPage)
     const limit = 20
 
     const searchInputRef = useRef<HTMLInputElement>(null)
     const { fetchOptions: fetchAnimeOptions } = useAnimeSeriesSelectStore()
 
-    // Fix: title → label
+    // 3. Effect: Đồng bộ State lên URL
+    useEffect(() => {
+        const params = new URLSearchParams()
+
+        if (page > 1) params.set("page", page.toString())
+        if (debouncedSearch) params.set("search", debouncedSearch)
+        if (animeSeriesId) params.set("animeSeriesId", animeSeriesId)
+        if (hasAnimeSeries !== null) params.set("hasAnimeSeries", hasAnimeSeries.toString())
+
+        // scroll: false để giữ vị trí màn hình khi filter
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [page, debouncedSearch, animeSeriesId, hasAnimeSeries, pathname, router])
+
     const fetchAnimeSeriesOptions = async (search: string): Promise<Option[]> => {
         const items = await fetchAnimeOptions(search)
         return items.map(item => ({
@@ -57,7 +84,6 @@ export function HomeImageList() {
                 pageSize: limit,
             })
 
-            // ĐÚNG 100% với apiClient.paginate<T>()
             if (result.isSuccess && result.items) {
                 setImages(result.items)
                 setTotal(result.totalItems)
@@ -83,19 +109,20 @@ export function HomeImageList() {
         }
     }
 
+    // Fetch data khi filter thay đổi
     useEffect(() => {
         fetchImages()
     }, [page, debouncedSearch, animeSeriesId, hasAnimeSeries])
 
+    // Focus lại input khi loading xong (nếu đang có search term)
     useEffect(() => {
-        setPage(1)
-    }, [searchTerm, animeSeriesId, hasAnimeSeries])
-
-    useEffect(() => {
-        if (!loading && searchInputRef.current) {
+        if (!loading && searchInputRef.current && searchTerm) {
             searchInputRef.current.focus()
         }
     }, [loading])
+
+    // ❌ ĐÃ XÓA: useEffect reset page tự động
+    // Thay vào đó, setPage(1) nằm trong các sự kiện onChange bên dưới
 
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this image?")) return
@@ -147,7 +174,11 @@ export function HomeImageList() {
                             ref={searchInputRef}
                             placeholder="Search by image name..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            // 4. Reset page = 1 tại đây
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value)
+                                setPage(1)
+                            }}
                             className="pl-10"
                         />
                     </div>
@@ -155,13 +186,18 @@ export function HomeImageList() {
                     <div>
                         <AsyncSelect
                             value={animeSeriesId}
+                            // 4. Reset page = 1 tại đây
                             onChange={(val) => {
                                 setAnimeSeriesId(val)
                                 if (val) setHasAnimeSeries(null)
+                                setPage(1)
                             }}
                             fetchOptions={fetchAnimeSeriesOptions}
                             placeholder="All Series"
                             clearable={true}
+                        // Lưu ý: Nếu muốn hiển thị label đúng ngay khi reload trang, 
+                        // AsyncSelect cần prop `initialSelectedOption` hoặc tự fetch label dựa vào animeSeriesId.
+                        // Với code hiện tại, nó sẽ hoạt động nhưng có thể hiển thị ID hoặc trống lúc đầu cho đến khi user tương tác.
                         />
                     </div>
 
@@ -169,10 +205,12 @@ export function HomeImageList() {
                         <Checkbox
                             id="no-series"
                             checked={hasAnimeSeries === false}
+                            // 4. Reset page = 1 tại đây
                             onCheckedChange={(checked) => {
                                 const value = checked ? false : null
                                 setHasAnimeSeries(value)
                                 if (value === false) setAnimeSeriesId("")
+                                setPage(1)
                             }}
                         />
                         <Label htmlFor="no-series" className="cursor-pointer select-none">
@@ -223,7 +261,6 @@ export function HomeImageList() {
     )
 }
 
-// Giữ nguyên đẹp lung linh
 function MasonryImageCard({ image, onDelete }: { image: HomeImageListItem; onDelete: () => void }) {
     const [hovered, setHovered] = useState(false)
 

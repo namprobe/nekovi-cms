@@ -8,8 +8,10 @@ export default function PostCategoriesPage() {
             <Breadcrumb />
 
             <div>
-                <h1 className="text-3xl font-bold text-foreground">Danh mục bài viết</h1>
-                <p className="text-muted-foreground">Quản lý danh mục cho bài viết blog.</p>
+                <h1 className="text-3xl font-bold text-foreground">Post Categories</h1>
+                <p className="text-muted-foreground">
+                    Manage categories for your blog posts.
+                </p>
             </div>
 
             <PostCategoryList />

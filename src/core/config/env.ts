@@ -58,7 +58,12 @@ export const env = {
             DELETE: (id: string) => `/categories/${id}`, // DELETE
         },
         ANIME: {
-            SELECT_LIST: `/anime-series/select-list`
+            SELECT_LIST: `/anime-series/select-list`,
+            LIST: `/anime-series`,
+            DETAIL: (id: string) => `/anime-series/${id}`,
+            CREATE: `/anime-series`,
+            UPDATE: (id: string) => `/anime-series/${id}`,
+            DELETE: (id: string) => `/anime-series/${id}`,
         },
         TAG: {
             SELECT_LIST: `/tags/select-list`,

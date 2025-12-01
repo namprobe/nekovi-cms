@@ -1,8 +1,9 @@
 // src/features/post-category/components/post-category-list.tsx
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useRef } from "react"
+// 1. Import thêm hooks cần thiết
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {
     Table,
     TableBody,
@@ -32,27 +33,46 @@ import { useDebounce } from "@/hooks/use-debounce"
 export function PostCategoryList() {
     const { toast } = useToast()
     const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
 
+    // 2. Lấy giá trị khởi tạo từ URL
+    const initialPage = Number(searchParams.get("page")) || 1
+    const initialSearch = searchParams.get("search") || ""
+
+    // 3. Khởi tạo state bằng giá trị từ URL
     const [categories, setCategories] = useState<PostCategoryItem[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchTerm, setSearchTerm] = useState("")
+    const [searchTerm, setSearchTerm] = useState(initialSearch)
     const debouncedSearch = useDebounce(searchTerm, 400)
+
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingCategory, setEditingCategory] = useState<PostCategoryItem | null>(null)
 
-    const [page, setPage] = useState(1)
+    const [page, setPage] = useState(initialPage)
     const [limit] = useState(10)
     const [total, setTotal] = useState(0)
 
     const searchInputRef = useRef<HTMLInputElement>(null)
 
+    // 4. Effect: Đồng bộ state lên URL
     useEffect(() => {
-        if (!loading && searchInputRef.current) {
+        const params = new URLSearchParams()
+
+        if (page > 1) params.set("page", String(page))
+        if (debouncedSearch) params.set("search", debouncedSearch)
+
+        // Dùng replace để không lưu lịch sử dư thừa, scroll: false để không nhảy trang
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [page, debouncedSearch, pathname, router])
+
+    useEffect(() => {
+        if (!loading && searchInputRef.current && searchTerm) {
             searchInputRef.current.focus()
         }
     }, [loading])
 
-    // Gọi API chỉ khi page hoặc debouncedSearch thay đổi
+    // Call API only when page or debouncedSearch changes
     const fetchCategories = async () => {
         try {
             setLoading(true)
@@ -64,28 +84,32 @@ export function PostCategoryList() {
             setCategories(response.items || [])
             setTotal(response.totalItems || 0)
         } catch (error: any) {
-            toast({ title: "Error", description: error.message || "Failed to load categories", variant: "destructive" })
+            toast({
+                title: "Error",
+                description: error.message || "Failed to load categories",
+                variant: "destructive",
+            })
         } finally {
             setLoading(false)
         }
     }
 
-    // 1. Khi page hoặc debouncedSearch thay đổi → fetch
+    // 1. Fetch when page or debouncedSearch changes
     useEffect(() => {
         fetchCategories()
     }, [page, debouncedSearch])
 
-    // 2. Reset page về 1 khi người dùng bắt đầu gõ (trước khi debounce)
-    useEffect(() => {
-        setPage(1)
-    }, [searchTerm])   // <-- chỉ reset page, không gọi API
+    // ❌ XÓA useEffect reset page cũ
+    // useEffect(() => {
+    //     setPage(1)
+    // }, [searchTerm])
 
     const getStatusBadge = (status: number) => {
         const text = status === 1 ? "Active" : "Inactive"
         return <Badge variant={STATUS_VARIANTS[status as keyof typeof STATUS_VARIANTS]}>{text}</Badge>
     }
 
-    /* ---- các hàm handleCreate, handleEdit, handleDelete, handleSave giữ nguyên ---- */
+    /* ---- handleCreate, handleEdit, handleDelete, handleSave ---- */
     const handleCreate = () => {
         setEditingCategory(null)
         setIsDialogOpen(true)
@@ -97,13 +121,17 @@ export function PostCategoryList() {
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Xóa danh mục này?")) return
+        if (!confirm("Are you sure you want to delete this category?")) return
         try {
             await postCategoryService.deletePostCategory(id)
-            toast({ title: "Thành công", description: "Xóa danh mục thành công" })
+            toast({ title: "Success", description: "Category deleted successfully" })
             fetchCategories()
         } catch (error: any) {
-            toast({ title: "Lỗi", description: error.message || "Xóa thất bại", variant: "destructive" })
+            toast({
+                title: "Error",
+                description: error.message || "Delete failed",
+                variant: "destructive",
+            })
         }
     }
 
@@ -111,20 +139,24 @@ export function PostCategoryList() {
         try {
             if (isEdit && id) {
                 await postCategoryService.updatePostCategory(id, formData)
-                toast({ title: "Thành công", description: "Cập nhật danh mục thành công" })
+                toast({ title: "Success", description: "Category updated successfully" })
             } else {
                 await postCategoryService.createPostCategory(formData)
-                toast({ title: "Thành công", description: "Tạo danh mục thành công" })
+                toast({ title: "Success", description: "Category created successfully" })
             }
             setIsDialogOpen(false)
             fetchCategories()
         } catch (error: any) {
-            toast({ title: "Lỗi", description: error.message || "Lưu thất bại", variant: "destructive" })
+            toast({
+                title: "Error",
+                description: error.message || "Save failed",
+                variant: "destructive",
+            })
         }
     }
 
     /* ------------------- UI ------------------- */
-    if (loading) {
+    if (loading && categories.length === 0) {
         return (
             <Card>
                 <CardContent className="p-6">
@@ -140,33 +172,37 @@ export function PostCategoryList() {
         <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle>Danh mục bài viết</CardTitle>
+                    <CardTitle>Post Categories</CardTitle>
                     <Button onClick={handleCreate}>
-                        <Plus className="mr-2 h-4 w-4" /> Thêm danh mục
+                        <Plus className="mr-2 h-4 w-4" /> Add Category
                     </Button>
                 </div>
+
                 <div className="flex items-center space-x-2 mt-4">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             ref={searchInputRef}
-                            placeholder="Tìm kiếm danh mục..."
+                            placeholder="Search categories..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            // 5. Logic reset page khi gõ search chuyển vào đây
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value)
+                                setPage(1)
+                            }}
                             className="pl-10"
                         />
                     </div>
                 </div>
             </CardHeader>
 
-            {/* ... Table, pagination, dialog ... (giữ nguyên) */}
             <CardContent>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Tên danh mục</TableHead>
-                            <TableHead>Mô tả</TableHead>
-                            <TableHead>Trạng thái</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead className="w-[70px]"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -174,7 +210,9 @@ export function PostCategoryList() {
                         {categories.map((cat) => (
                             <TableRow key={cat.id}>
                                 <TableCell className="font-medium">{cat.name}</TableCell>
-                                <TableCell className="max-w-xs truncate">{cat.description || "-"}</TableCell>
+                                <TableCell className="max-w-xs truncate">
+                                    {cat.description || "-"}
+                                </TableCell>
                                 <TableCell>{getStatusBadge(cat.status)}</TableCell>
                                 <TableCell>
                                     <DropdownMenu>
@@ -185,10 +223,13 @@ export function PostCategoryList() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onClick={() => handleEdit(cat)}>
-                                                <Edit className="mr-2 h-4 w-4" /> Sửa
+                                                <Edit className="mr-2 h-4 w-4" /> Edit
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(cat.id)}>
-                                                <Trash2 className="mr-2 h-4 w-4" /> Xóa
+                                            <DropdownMenuItem
+                                                className="text-red-600"
+                                                onClick={() => handleDelete(cat.id)}
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -200,19 +241,29 @@ export function PostCategoryList() {
 
                 {categories.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
-                        Không tìm thấy danh mục nào
+                        No categories found
                     </div>
                 )}
 
                 <div className="mt-4 flex justify-between items-center">
-                    <Button disabled={page <= 1} onClick={() => setPage(page - 1)} variant="outline" size="sm">
-                        Trước
+                    <Button
+                        disabled={page <= 1}
+                        onClick={() => setPage(page - 1)}
+                        variant="outline"
+                        size="sm"
+                    >
+                        Previous
                     </Button>
                     <span className="text-sm">
-                        Trang {page} / {Math.ceil(total / limit) || 1}
+                        Page {page} / {Math.ceil(total / limit) || 1}
                     </span>
-                    <Button disabled={page * limit >= total} onClick={() => setPage(page + 1)} variant="outline" size="sm">
-                        Sau
+                    <Button
+                        disabled={page * limit >= total}
+                        onClick={() => setPage(page + 1)}
+                        variant="outline"
+                        size="sm"
+                    >
+                        Next
                     </Button>
                 </div>
             </CardContent>
