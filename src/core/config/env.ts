@@ -111,6 +111,7 @@ export const env = {
             UPDATE: (id: string) => `/product-inventory/${id}`,
             DELETE: (id: string) => `/product-inventory/${id}`,
         },
+        DASHBOARD: `/dashboard`,
     }
 } as const;
 
