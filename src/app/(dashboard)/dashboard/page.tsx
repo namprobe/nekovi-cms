@@ -1,3 +1,4 @@
+// src/app/%28dashboard%29/dashboard/page.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
 import { OrderStats } from "@/features/orders/components/order-stats"

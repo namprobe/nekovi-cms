@@ -16,6 +16,13 @@ import { productService } from "@/entities/products/services/product"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"   // ← Import hook
 import ProductInventoryDialog from "@/features/product-inventory/product-inventory-dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select"
 
 export default function ProductList() {
   const router = useRouter()
@@ -32,6 +39,7 @@ export default function ProductList() {
   // Search state
   const [searchTerm, setSearchTerm] = useState("")                    // ← UI input
   const debouncedSearch = useDebounce(searchTerm, 400)                // ← Debounced value
+  const [stockStatus, setStockStatus] = useState<"" | "all" | "in-stock" | "low-stock" | "out-of-stock">("")
 
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -42,19 +50,22 @@ export default function ProductList() {
   useEffect(() => {
     const urlSearch = searchParams.get("search") || ""
     const urlPage = Number(searchParams.get("page") || 1)
+    const urlStockStatus = searchParams.get("stockStatus") || ""
 
     setSearchTerm(urlSearch)
     setPage(urlPage)
-  }, [])
+    setStockStatus(urlStockStatus === "all" ? "" : (urlStockStatus as "in-stock" | "low-stock" | "out-of-stock"))
+  }, [searchParams])
 
   useEffect(() => {
     const params = new URLSearchParams()
 
     if (searchTerm) params.set("search", searchTerm)
     if (page) params.set("page", String(page))
+    if (stockStatus && stockStatus !== "all") params.set("stockStatus", stockStatus)
 
     router.replace(`?${params.toString()}`, { scroll: false })
-  }, [searchTerm, page])
+  }, [searchTerm, page, stockStatus])
 
   // Fetch function
   const fetchProducts = async () => {
@@ -64,6 +75,7 @@ export default function ProductList() {
         page,
         limit,
         search: debouncedSearch || undefined,
+        stockStatus: stockStatus === "all" || stockStatus === "" ? undefined : (stockStatus as "in-stock" | "low-stock" | "out-of-stock"),
       })
 
       if (res.isSuccess) {
@@ -86,7 +98,7 @@ export default function ProductList() {
   // Gọi API khi page hoặc debouncedSearch thay đổi
   useEffect(() => {
     fetchProducts()
-  }, [page, debouncedSearch])
+  }, [page, debouncedSearch, stockStatus])
 
 
   // Focus lại input sau khi loading xong
@@ -115,7 +127,7 @@ export default function ProductList() {
 
   const getStockBadge = (quantity: number) => {
     if (quantity === 0) return <Badge variant="error">Out of Stock</Badge>
-    if (quantity <= 5) return <Badge variant="warning">Low Stock</Badge>
+    if (quantity <= 10) return <Badge variant="warning">Low Stock</Badge>
     return <Badge variant="success">In Stock</Badge>
   }
 
@@ -161,6 +173,37 @@ export default function ProductList() {
               className="pl-10"
             />
           </div>
+
+          {/* Stock Status Filter */}
+          <Select value={stockStatus} onValueChange={(value) => {
+            setStockStatus(value as "" | "all" | "in-stock" | "low-stock" | "out-of-stock")
+            setPage(1) // reset về trang 1 khi đổi filter
+          }}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Stock status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stock</SelectItem>
+              <SelectItem value="in-stock">
+                <div className="flex items-center gap-2">
+                  <Badge variant="success" className="text-xs">In Stock</Badge>
+                  <span>In Stock (&gt;10)</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="low-stock">
+                <div className="flex items-center gap-2">
+                  <Badge variant="warning" className="text-xs">Low Stock</Badge>
+                  <span>Low Stock (1–10)</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="out-of-stock">
+                <div className="flex items-center gap-2">
+                  <Badge variant="error" className="text-xs">Out of Stock</Badge>
+                  <span>Out of Stock (0)</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
 

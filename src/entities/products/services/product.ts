@@ -18,7 +18,12 @@ export const productService = {
     // Paginated list (params: page, limit, search, categoryId, sortBy, sortOrder...)
     // getProducts: (params?: Record<string, any>) =>
     //     apiClient.paginate<ProductListItem>("/products", params),
-    async getProducts(params: { page?: number; limit?: number; search?: string }) {
+    async getProducts(params: {
+        page?: number
+        limit?: number
+        search?: string
+        stockStatus?: "in-stock" | "low-stock" | "out-of-stock"
+    }) {
         return apiClient.paginate<ProductListItem[]>("/products", params)
     },
 
