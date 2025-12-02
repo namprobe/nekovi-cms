@@ -37,19 +37,12 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
     if (error || !product) return null
 
     const formatDate = (date?: Date | string) =>
-        date ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(date)) : "N/A"
+        date ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(new Date(date)) : "N/A"
 
     const formatPrice = (price?: number) =>
         price !== undefined
-            ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price)
+            ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price)
             : "N/A"
-
-    const formatDiscount = (discountPercent?: number) => {
-        return discountPercent && discountPercent > 0
-            ? `-${discountPercent}%`
-            : ""
-    }
-
 
     const InfoRow = ({
         icon,
@@ -94,7 +87,7 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
                 <InfoRow
                     icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
                     label="Discount Price"
-                    value={formatDiscount(product.discountPrice)}
+                    value={product.discountPrice ? `-${formatPrice(product.discountPrice)}` : "N/A"}
                 />
                 <InfoRow
                     icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
@@ -154,6 +147,7 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
             <div className="flex flex-col items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-50 p-4 rounded-xl shadow-sm border">
                 <DollarSign className="h-6 w-6 text-emerald-600 mb-1" />
                 <span className="text-sm text-muted-foreground">Price</span>
+                {/* ✅ Giá tiền tự động hiển thị VND do hàm formatPrice đã sửa */}
                 <span className="text-xl font-bold text-emerald-700">{formatPrice(product.price)}</span>
             </div>
             <div className="flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-yellow-50 p-4 rounded-xl shadow-sm border">
@@ -290,4 +284,4 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
             </Card>
         </div>
     )
-} 
+}

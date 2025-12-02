@@ -18,9 +18,9 @@ export interface Product extends BaseEntity {
   productTags?: ProductTag[]
   inventory?: ProductInventory
   reviews?: ProductReview[]
-  events?: EventItem[] // Thêm events để khớp với ProductResponse
-  totalSales: number // Bỏ optional để khớp với ProductResponse
-  averageRating: number // Bỏ optional để khớp với ProductResponse
+  events?: EventItem[]
+  totalSales: number
+  averageRating: number
   status: number
 }
 

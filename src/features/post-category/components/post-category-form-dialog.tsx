@@ -33,7 +33,6 @@ export function PostCategoryFormDialog({
 }: PostCategoryFormDialogProps) {
     const { toast } = useToast()
     const [formData, setFormData] = useState({ name: "", description: "", status: 1 })
-    1
     const [isLoading, setIsLoading] = useState(false)
     const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -57,10 +56,10 @@ export function PostCategoryFormDialog({
 
     const validate = () => {
         const newErrors: Record<string, string> = {}
-        if (!formData.name.trim()) newErrors.name = "Tên danh mục là bắt buộc"
-        else if (formData.name.length < 2) newErrors.name = "Tên phải ít nhất 2 ký tự"
+        if (!formData.name.trim()) newErrors.name = "Category name is required"
+        else if (formData.name.length < 2) newErrors.name = "Name must be at least 2 characters"
         if (formData.description && formData.description.length > 500)
-            newErrors.description = "Mô tả không được vượt quá 500 ký tự"
+            newErrors.description = "Description cannot exceed 500 characters"
         setErrors(newErrors)
         return Object.keys(newErrors).length === 0
     }
@@ -77,7 +76,11 @@ export function PostCategoryFormDialog({
             await onSave(data, !!editingCategory, editingCategory?.id)
             onOpenChange(false)
         } catch (err: any) {
-            toast({ title: "Lỗi", description: err.message || "Lưu thất bại", variant: "destructive" })
+            toast({
+                title: "Error",
+                description: err.message || "Save failed",
+                variant: "destructive",
+            })
         } finally {
             setIsLoading(false)
         }
@@ -87,15 +90,17 @@ export function PostCategoryFormDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{editingCategory ? "Sửa danh mục" : "Tạo danh mục mới"}</DialogTitle>
+                    <DialogTitle>{editingCategory ? "Edit Category" : "Create New Category"}</DialogTitle>
                     <DialogDescription>
-                        {editingCategory ? "Cập nhật thông tin danh mục bài viết." : "Thêm danh mục mới cho bài viết."}
+                        {editingCategory
+                            ? "Update the post category information."
+                            : "Add a new category for posts."}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label>Tên danh mục *</Label>
+                        <Label>Category Name *</Label>
                         <Input
                             value={formData.name}
                             onChange={(e) => handleChange("name", e.target.value)}
@@ -105,7 +110,7 @@ export function PostCategoryFormDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Mô tả</Label>
+                        <Label>Description</Label>
                         <Textarea
                             value={formData.description}
                             onChange={(e) => handleChange("description", e.target.value)}
@@ -115,32 +120,32 @@ export function PostCategoryFormDialog({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Trạng thái</Label>
+                        <Label>Status</Label>
                         <select
                             value={formData.status}
                             onChange={(e) => handleChange("status", Number(e.target.value))}
                             className="w-full px-3 py-2 border rounded-md"
                             disabled={isLoading}
                         >
-                            <option value={1}>Hoạt động</option>
-                            <option value={0}>Không hoạt động</option>
+                            <option value={1}>Active</option>
+                            <option value={0}>Inactive</option>
                         </select>
                     </div>
                 </div>
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-                        Hủy
+                        Cancel
                     </Button>
                     <Button onClick={handleSubmit} disabled={isLoading}>
                         {isLoading ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang lưu...
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
                             </>
                         ) : editingCategory ? (
-                            "Cập nhật"
+                            "Update"
                         ) : (
-                            "Tạo"
+                            "Create"
                         )}
                     </Button>
                 </DialogFooter>

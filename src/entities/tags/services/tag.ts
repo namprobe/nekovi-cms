@@ -1,29 +1,26 @@
-// src/entities/tags/services/tag.ts
+import { apiClient } from "@/core/lib/api-client"
 import { env } from "@/core/config/env"
-
-export interface Tag {
-    id: string
-    name: string
-}
+import type { Tag } from "../types/tag"
+import type { ApiResult } from "@/shared/types/common"
 
 export const tagService = {
-    async getTags(search: string = "", page: number = 1, pageSize: number = 20) {
-        const url = new URL(`${env.BASE_URL}${env.CMS_PREFIX}/tags`)
-        if (search) url.searchParams.append("search", search)
-        url.searchParams.append("page", page.toString())
-        url.searchParams.append("pageSize", pageSize.toString())
+    async getTags(params: { page?: number; pageSize?: number; search?: string; status?: number }) {
+        return apiClient.paginate<Tag>(env.ENDPOINTS.TAG.LIST, params)
+    },
 
-        const res = await fetch(url.toString(), {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-        })
+    async getTag(id: string) {
+        return apiClient.get<Tag>(env.ENDPOINTS.TAG.DETAIL(id))
+    },
 
-        if (!res.ok) throw new Error("Failed to fetch tags")
+    createTag(formData: FormData) {
+        return apiClient.postFormData<ApiResult<any>>(env.ENDPOINTS.TAG.CREATE, formData)
+    },
 
-        return res.json() as Promise<{
-            items: Tag[]
-            total: number
-            hasMore: boolean
-        }>
+    updateTag(id: string, formData: FormData) {
+        return apiClient.putFormData<ApiResult<any>>(env.ENDPOINTS.TAG.UPDATE(id), formData)
+    },
+
+    deleteTag(id: string) {
+        return apiClient.delete<void>(env.ENDPOINTS.TAG.DELETE(id))
     },
 }

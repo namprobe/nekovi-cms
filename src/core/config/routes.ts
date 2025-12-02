@@ -15,13 +15,25 @@ export const ROUTES = {
   USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
   USER_EDIT: (id: string) => `/dashboard/users/${id}/edit`,
 
+  // Anime Series management
+  ANIME_SERIES: "/dashboard/anime-series",
+  ANIME_SERIES_CREATE: "/dashboard/anime-series/create",
+  ANIME_SERIES_EDIT: (id: string) => `/dashboard/anime-series/${id}/edit`,
+  ANIME_SERIES_DETAIL: (id: string) => `/dashboard/anime-series/${id}`,
 
   // Product management
   PRODUCTS: "/dashboard/products",
   PRODUCT_DETAIL: (id: string) => `/dashboard/products/${id}`,
   PRODUCT_EDIT: (id: string) => `/dashboard/products/${id}/edit`,
   PRODUCT_CREATE: "/dashboard/products/create",
+
+  //Quản lý tồn kho của từng sản phẩm
+  PRODUCT_INVENTORY_LIST: (productId: string) => `/dashboard/products/${productId}/inventory`,
+
   CATEGORIES: "/dashboard/categories",
+
+  // Tag management
+  TAGS: "/dashboard/tags",
 
   // Order management
   ORDERS: "/dashboard/orders",

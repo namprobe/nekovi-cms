@@ -20,10 +20,11 @@ import {
   ChevronRight,
   Home,
   Tags,
-  icons,
   Ticket,
   Badge,
   ImageIcon,
+  Film,
+  BadgePercent,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -52,9 +53,24 @@ const navigation = [
     ],
   },
   {
+    name: "Tags",
+    href: ROUTES.TAGS,
+    icon: Tags,
+  },
+  {
     name: "Orders",
     href: ROUTES.ORDERS,
     icon: ShoppingCart,
+  },
+  // Trong mảng navigation của Sidebar.tsx, thêm:
+  {
+    name: "Anime Series",
+    href: ROUTES.ANIME_SERIES,
+    icon: Film,
+    children: [
+      { name: "All Anime", href: ROUTES.ANIME_SERIES },
+      { name: "Add Anime", href: ROUTES.ANIME_SERIES_CREATE },
+    ],
   },
   {
     name: "Blog",
@@ -87,7 +103,7 @@ const navigation = [
   {
     name: "Marketing",
     href: ROUTES.MARKETING,
-    icon: Tags,
+    icon: BadgePercent,
     children: [
       { name: "Coupons", href: ROUTES.COUPONS, icon: Ticket },
       { name: "Badges", href: ROUTES.BADGES, icon: Badge },
@@ -130,7 +146,7 @@ export function Sidebar({ className }: SidebarProps) {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <Tags className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-lg">Anime CMS</span>
+            <span className="font-semibold text-lg">NekoVi CMS</span>
           </div>
         )}
         <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="h-8 w-8 p-0">

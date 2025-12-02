@@ -3,8 +3,6 @@ import { apiClient } from "@/core/lib/api-client"
 import type {
     Product,
     ProductListItem,
-    CreateProductDto,
-    UpdateProductDto
 } from "@/entities/products/types/product"
 import type { PaginateResult, ApiResult } from "@/shared/types/common"
 
@@ -20,7 +18,12 @@ export const productService = {
     // Paginated list (params: page, limit, search, categoryId, sortBy, sortOrder...)
     // getProducts: (params?: Record<string, any>) =>
     //     apiClient.paginate<ProductListItem>("/products", params),
-    async getProducts(params: { page?: number; limit?: number; search?: string }) {
+    async getProducts(params: {
+        page?: number
+        limit?: number
+        search?: string
+        stockStatus?: "in-stock" | "low-stock" | "out-of-stock"
+    }) {
         return apiClient.paginate<ProductListItem[]>("/products", params)
     },
 
