@@ -20,11 +20,11 @@ import {
   ChevronRight,
   Home,
   Tags,
-  icons,
   Ticket,
   Badge,
   ImageIcon,
   Film,
+  BadgePercent,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -103,7 +103,7 @@ const navigation = [
   {
     name: "Marketing",
     href: ROUTES.MARKETING,
-    icon: Tags,
+    icon: BadgePercent,
     children: [
       { name: "Coupons", href: ROUTES.COUPONS, icon: Ticket },
       { name: "Badges", href: ROUTES.BADGES, icon: Badge },
