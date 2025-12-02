@@ -53,6 +53,11 @@ const navigation = [
     ],
   },
   {
+    name: "Tags",
+    href: ROUTES.TAGS,
+    icon: Tags,
+  },
+  {
     name: "Orders",
     href: ROUTES.ORDERS,
     icon: ShoppingCart,

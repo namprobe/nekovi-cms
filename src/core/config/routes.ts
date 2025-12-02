@@ -32,6 +32,9 @@ export const ROUTES = {
 
   CATEGORIES: "/dashboard/categories",
 
+  // Tag management
+  TAGS: "/dashboard/tags",
+
   // Order management
   ORDERS: "/dashboard/orders",
   ORDER_DETAIL: (id: string) => `/dashboard/orders/${id}`,
