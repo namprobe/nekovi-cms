@@ -18,7 +18,6 @@ export interface ProductInventoryItem {
     statusName: string
 }
 
-export interface ProductInventoryResponse extends ProductInventoryItem { }
 
 export interface ProductInventoryRequest {
     productId: string
