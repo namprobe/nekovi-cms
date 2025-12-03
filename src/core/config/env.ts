@@ -112,6 +112,7 @@ export const env = {
             DELETE: (id: string) => `/product-inventory/${id}`,
         },
         DASHBOARD: `/dashboard`,
+        REPORTS: `/reports`,
     }
 } as const;
 
