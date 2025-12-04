@@ -13,10 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import type { EventListItem } from "@/entities/event/types/event"
 import { STATUS_VARIANTS } from "@/core/config/constants"
 import { ROUTES } from "@/core/config/routes"
-import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye, Filter } from "lucide-react"
+import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye, Filter, ShoppingBag } from "lucide-react"
 import { eventService } from "@/entities/event/services/event"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"
+import { EventProductModal } from "@/features/events/components/event-product-modal"
 
 const statusOptions = [
   { value: "all", label: "All Events" },
@@ -53,6 +54,11 @@ export function EventList() {
 
   // Ref cho input search để focus lại
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // --- STATE CHO MODAL PRODUCT ---
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+  const [selectedEventName, setSelectedEventName] = useState<string>("")
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
 
   // 3. Effect: Đồng bộ state lên URL
   useEffect(() => {
@@ -124,6 +130,12 @@ export function EventList() {
     return <Badge variant={STATUS_VARIANTS[status as keyof typeof STATUS_VARIANTS]}>{statusText}</Badge>
   }
 
+  const openProductModal = (id: string, name: string) => {
+    setSelectedEventId(id)
+    setSelectedEventName(name)
+    setIsProductModalOpen(true)
+  }
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       month: "short",
@@ -159,167 +171,185 @@ export function EventList() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Events</CardTitle>
-          <Button onClick={() => router.push(ROUTES.EVENT_CREATE)}>
-            <Plus className="mr-2 h-4 w-4" /> Create Event
-          </Button>
-        </div>
-        <div className="flex items-center space-x-4 mt-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              ref={searchInputRef}
-              placeholder="Search events..."
-              value={searchTerm}
-              // 6. Reset page = 1 tại đây
-              onChange={(e) => {
-                setSearchTerm(e.target.value)
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Events</CardTitle>
+            <Button onClick={() => router.push(ROUTES.EVENT_CREATE)}>
+              <Plus className="mr-2 h-4 w-4" /> Create Event
+            </Button>
+          </div>
+          <div className="flex items-center space-x-4 mt-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                ref={searchInputRef}
+                placeholder="Search events..."
+                value={searchTerm}
+                // 6. Reset page = 1 tại đây
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setPage(1)
+                }}
+                className="pl-10"
+              />
+            </div>
+            <Select
+              value={selectedStatus}
+              onValueChange={(val) => {
+                // 6. Reset page = 1 tại đây
+                setSelectedStatus(val as "all" | "active" | "inactive")
                 setPage(1)
               }}
-              className="pl-10"
-            />
+            >
+              <SelectTrigger className="w-40">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select
-            value={selectedStatus}
-            onValueChange={(val) => {
-              // 6. Reset page = 1 tại đây
-              setSelectedStatus(val as "all" | "active" | "inactive")
-              setPage(1)
-            }}
-          >
-            <SelectTrigger className="w-40">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
+        </CardHeader>
 
-      <CardContent>
-        <div className="w-full overflow-x-auto">
-          <Table className="min-w-[800px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Event</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-[80px] text-right"></TableHead>
-              </TableRow>
-            </TableHeader>
+        <CardContent>
+          <div className="w-full overflow-x-auto">
+            <Table className="min-w-[800px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Event</TableHead>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[80px] text-right"></TableHead>
+                </TableRow>
+              </TableHeader>
 
-            <TableBody>
-              {events.map((event) => {
-                // Xử lý status hiển thị (nếu API trả về boolean isActive thì convert sang number)
-                const displayStatus = typeof event.status === 'number' ? event.status : (event.isActive ? 1 : 0);
+              <TableBody>
+                {events.map((event) => {
+                  // Xử lý status hiển thị
+                  const displayStatus = typeof event.status === 'number' ? event.status : (event.isActive ? 1 : 0);
 
-                return (
-                  <TableRow key={event.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
-                          <img
-                            src={event.imagePath || "/placeholder.svg"}
-                            alt={event.name || "Event image"}
-                            className="object-cover w-full h-full"
-                          />
-                        </div>
-                        <div className="min-w-[150px]">
-                          <div className="font-medium line-clamp-1">{event.name}</div>
-                          <div className="text-sm text-muted-foreground line-clamp-1">
-                            {event.description}
+                  return (
+                    <TableRow key={event.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0">
+                            <img
+                              src={event.imagePath || "/placeholder.svg"}
+                              alt={event.name || "Event image"}
+                              className="object-cover w-full h-full"
+                            />
+                          </div>
+                          <div className="min-w-[150px]">
+                            <div className="font-medium line-clamp-1">{event.name}</div>
+                            <div className="text-sm text-muted-foreground line-clamp-1">
+                              {event.description}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center space-x-1 text-sm">
-                        <span>{formatDate(event.startDate)}</span>
-                      </div>
-                      {event.endDate && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          to {formatDate(event.endDate)}
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex items-center space-x-1 text-sm">
+                          <span>{formatDate(event.startDate)}</span>
                         </div>
-                      )}
-                    </TableCell>
+                        {event.endDate && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            to {formatDate(event.endDate)}
+                          </div>
+                        )}
+                      </TableCell>
 
-                    <TableCell className="whitespace-nowrap">
-                      <span className="line-clamp-1">{event.location}</span>
-                    </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <span className="line-clamp-1">{event.location}</span>
+                      </TableCell>
 
-                    <TableCell>{getStatusBadge(displayStatus)}</TableCell>
+                      <TableCell>{getStatusBadge(displayStatus)}</TableCell>
 
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_DETAIL(event.id))}>
-                            <Eye className="mr-2 h-4 w-4" /> View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_EDIT(event.id))}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDelete(event.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_DETAIL(event.id))}>
+                              <Eye className="mr-2 h-4 w-4" /> View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(ROUTES.EVENT_EDIT(event.id))}>
+                              <Edit className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
 
-          {events.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No events found
+                            {/* --- MỤC QUẢN LÝ SẢN PHẨM --- */}
+                            <DropdownMenuItem onClick={() => openProductModal(event.id, event.name)}>
+                              <ShoppingBag className="mr-2 h-4 w-4" /> Manage Products
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleDelete(event.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+
+            {events.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No events found
+              </div>
+            )}
+
+            {/* Pagination */}
+            <div className="mt-4 flex justify-between items-center">
+              <Button
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+                variant="outline"
+                size="sm"
+              >
+                Prev
+              </Button>
+
+              <span className="text-sm">
+                Page {page} of {Math.ceil(total / limit) || 1}
+              </span>
+
+              <Button
+                disabled={page * limit >= total}
+                onClick={() => setPage(page + 1)}
+                variant="outline"
+                size="sm"
+              >
+                Next
+              </Button>
             </div>
-          )}
 
-          {/* Pagination */}
-          <div className="mt-4 flex justify-between items-center">
-            <Button
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              variant="outline"
-              size="sm"
-            >
-              Prev
-            </Button>
-
-            <span className="text-sm">
-              Page {page} of {Math.ceil(total / limit) || 1}
-            </span>
-
-            <Button
-              disabled={page * limit >= total}
-              onClick={() => setPage(page + 1)}
-              variant="outline"
-              size="sm"
-            >
-              Next
-            </Button>
           </div>
+        </CardContent>
+      </Card>
 
-        </div>
-      </CardContent>
-    </Card>
+      {/* --- RENDER MODAL PRODUCT --- */}
+      {selectedEventId && (
+        <EventProductModal
+          isOpen={isProductModalOpen}
+          onClose={() => setIsProductModalOpen(false)}
+          eventId={selectedEventId}
+          eventTitle={selectedEventName}
+        />
+      )}
+    </>
   )
 }

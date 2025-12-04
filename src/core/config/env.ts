@@ -39,12 +39,13 @@ export const env = {
             REFRESH_TOKEN: "/auth/refresh-token",
         },
         PRODUCT: {
-            LIST: `${CMS_PREFIX}/products`,
-            DETAIL: (id: string) => `${CMS_PREFIX}/products/${id}`,
-            CREATE: `${CMS_PREFIX}/products`,   // POST tạo mới
-            UPDATE: (id: string) => `${CMS_PREFIX}/products/${id}`, // PUT/PATCH
-            DELETE: (id: string) => `${CMS_PREFIX}/products/${id}`, // DELETE
-            UPLOAD_IMAGE: `${CMS_PREFIX}/product-image`, // POST upload ảnh
+            LIST: `/products`,
+            DETAIL: (id: string) => `/products/${id}`,
+            CREATE: `/products`,   // POST tạo mới
+            UPDATE: (id: string) => `/products/${id}`, // PUT/PATCH
+            DELETE: (id: string) => `/products/${id}`, // DELETE
+            UPLOAD_IMAGE: `/product-image`, // POST upload ảnh
+            SELECT_LIST: `/products/select-list`,
         },
         PRODUCT_IMAGE: {
             CREATE: `/product-image`,
@@ -79,6 +80,10 @@ export const env = {
             CREATE: `/events`,
             UPDATE: (id: string) => `/events/${id}`,
             DELETE: (id: string) => `/events/${id}`,
+        },
+        EVENT_PRODUCT: {
+            SAVE: (id: string) => `/event-products/${id}/products/save`,
+            LIST_BY_EVENT: (id: string) => `/event-products/by-event/${id}`,
         },
         BLOGPOST: {
             LIST: `/blog-posts`,
