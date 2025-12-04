@@ -72,6 +72,18 @@ export const ROUTES = {
   BADGE_EDIT: (id: string) => `/dashboard/marketing/badges/${id}/edit`,
   BADGE_CREATE: "/dashboard/marketing/badges/create",
 
+  // Payment Methods
+  PAYMENT_METHODS: "/dashboard/payment-methods",
+  PAYMENT_METHOD_CREATE: "/dashboard/payment-methods/create",
+  PAYMENT_METHOD_EDIT: (id: string) => `/dashboard/payment-methods/${id}/edit`,
+  PAYMENT_METHOD_DETAIL: (id: string) => `/dashboard/payment-methods/${id}`,
+
+  // Shipping Methods
+  SHIPPING_METHODS: "/dashboard/shipping-methods",
+  SHIPPING_METHOD_CREATE: "/dashboard/shipping-methods/create",
+  SHIPPING_METHOD_EDIT: (id: string) => `/dashboard/shipping-methods/${id}/edit`,
+  SHIPPING_METHOD_DETAIL: (id: string) => `/dashboard/shipping-methods/${id}`,
+
   // Reports
   REPORTS: "/dashboard/reports",
 
@@ -116,6 +128,14 @@ export const API_ROUTES = {
   COUPON_BY_ID: (id: string) => `/api/marketing/coupons/${id}`,
   BADGES: "/api/marketing/badges",
   BADGE_BY_ID: (id: string) => `/api/marketing/badges/${id}`,
+
+  // Payment Methods
+  PAYMENT_METHODS: "/payment-methods",
+  PAYMENT_METHOD_BY_ID: (id: string) => `/payment-methods/${id}`,
+
+  // Shipping Methods
+  SHIPPING_METHODS: "/shipping-methods",
+  SHIPPING_METHOD_BY_ID: (id: string) => `/shipping-methods/${id}`,
 
   // Reports
   DASHBOARD_STATS: "/api/reports/dashboard",

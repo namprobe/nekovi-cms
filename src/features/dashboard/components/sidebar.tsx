@@ -25,6 +25,8 @@ import {
   ImageIcon,
   Film,
   BadgePercent,
+  CreditCard,
+  Truck,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -107,6 +109,24 @@ const navigation = [
     children: [
       { name: "Coupons", href: ROUTES.COUPONS, icon: Ticket },
       { name: "Badges", href: ROUTES.BADGES, icon: Badge },
+    ],
+  },
+  {
+    name: "Payment Methods",
+    href: ROUTES.PAYMENT_METHODS,
+    icon: CreditCard,
+    children: [
+      { name: "All Methods", href: ROUTES.PAYMENT_METHODS },
+      { name: "Add Method", href: ROUTES.PAYMENT_METHOD_CREATE },
+    ],
+  },
+  {
+    name: "Shipping Methods",
+    href: ROUTES.SHIPPING_METHODS,
+    icon: Truck,
+    children: [
+      { name: "All Methods", href: ROUTES.SHIPPING_METHODS },
+      { name: "Add Method", href: ROUTES.SHIPPING_METHOD_CREATE },
     ],
   },
   {
