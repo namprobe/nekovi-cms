@@ -146,12 +146,20 @@ export function PaymentMethodForm({ initialData, isEditing = false }: PaymentMet
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
+                <Select
                   value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  onValueChange={(value) => handleInputChange("name", value)}
                   disabled={isLoading}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment gateway" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="VnPay">VnPay</SelectItem>
+                    <SelectItem value="Momo">Momo</SelectItem>
+                    <SelectItem value="PayPal">PayPal</SelectItem>
+                  </SelectContent>
+                </Select>
                 {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
               </div>
 
