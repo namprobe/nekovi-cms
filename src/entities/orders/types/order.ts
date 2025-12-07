@@ -1,121 +1,170 @@
-import type { BaseEntity, OrderStatus, PaymentStatus } from "@/shared/types/common"
+import type { BaseEntity, OrderStatus, PaymentStatus, DiscountType } from "@/shared/types/common"
 
-export interface Order extends BaseEntity {
-  orderNumber: string
+// ============================================
+// ORDER LIST ITEM (Map 1:1 với OrderListItem.cs)
+// ============================================
+export interface OrderListItem extends BaseEntity {
+  // User Info
   userId?: string
+  userEmail?: string
+  userName?: string
   isOneClick: boolean
   guestEmail?: string
-  guestFirstName?: string
-  guestLastName?: string
-  guestPhone?: string
-  oneClickAddress?: string
-  totalAmount: number
-  discountAmount: number
+  guestName?: string
+
+  // Financial Breakdown
+  subtotalOriginal: number
+  productDiscountAmount: number
+  subtotalAfterProductDiscount: number
+  couponDiscountAmount: number
+  totalProductAmount: number
+  shippingFeeOriginal: number
+  shippingDiscountAmount: number
+  shippingFeeActual: number
   taxAmount: number
-  shippingAmount: number
   finalAmount: number
+
+  // Status
   paymentStatus: PaymentStatus
   orderStatus: OrderStatus
-  notes?: string
-  user?: {
-    id: string
-    firstName: string
-    lastName: string
-    email: string
-    phoneNumber?: string
-  }
-  orderItems?: OrderItem[]
-  payments?: Payment[]
-  shippingMethods?: OrderShippingMethod[]
+
+  // Summary
+  itemCount: number
 }
 
-export interface OrderItem extends BaseEntity {
-  orderId: string
+// ============================================
+// ORDER ITEM DTO (Map 1:1 với OrderItemDto.cs)
+// ============================================
+export interface OrderItemDto {
+  id: string
   productId: string
+  productName: string
+  productImageUrl?: string
   quantity: number
-  unitPrice: number
-  discountAmount: number
-  order?: Order
-  product?: {
-    id: string
-    name: string
-    price: number
-    discountPrice?: number
-    imagePath?: string
-  }
+  unitPriceOriginal: number
+  unitPriceAfterDiscount: number
+  unitDiscountAmount: number
+  lineTotal: number
 }
 
-export interface Payment extends BaseEntity {
-  orderId: string
+// ============================================
+// ORDER SHIPPING DTO (Map 1:1 với OrderShippingDto.cs)
+// ============================================
+export interface OrderShippingDto {
+  id: string
+  shippingMethodId: string
+  shippingMethodName?: string
+  providerName?: string
+  trackingNumber?: string
+
+  // Shipping Address
+  userAddressId?: string
+  recipientName?: string
+  recipientPhone?: string
+  address?: string
+  wardName?: string
+  districtName?: string
+  provinceName?: string
+
+  // Shipping Fees
+  shippingFeeOriginal: number
+  shippingDiscountAmount: number
+  shippingFeeActual: number
+  isFreeshipping: boolean
+  freeshippingNote?: string
+
+  // Additional Fees
+  codFee: number
+  insuranceFee: number
+
+  // Dates
+  estimatedDeliveryDate?: Date
+  shippedDate?: Date
+  deliveredDate?: Date
+}
+
+// ============================================
+// ORDER PAYMENT DTO (Map 1:1 với OrderPaymentDto.cs)
+// ============================================
+export interface OrderPaymentDto {
+  id: string
   paymentMethodId: string
+  paymentMethodName: string
   amount: number
-  transactionId?: string
+  transactionNo?: string
   paymentStatus: PaymentStatus
   paymentDate?: Date
   notes?: string
   processorResponse?: string
-  order?: Order
-  paymentMethod?: PaymentMethod
 }
 
-export interface PaymentMethod extends BaseEntity {
-  name: string
+// ============================================
+// ORDER COUPON DTO (Map 1:1 với OrderCouponDto.cs)
+// ============================================
+export interface OrderCouponDto {
+  couponId: string
+  couponCode: string
   description?: string
-  iconPath?: string
-  isOnlinePayment: boolean
-  processingFee: number
-  processorName?: string
-  configuration?: string
+  discountType: DiscountType
+  discountValue: number
+  usedDate?: Date
 }
 
-export interface ShippingMethod extends BaseEntity {
-  name: string
-  description?: string
-  cost: number
-  estimatedDays?: number
-}
+// ============================================
+// ORDER DTO (Map 1:1 với OrderDto.cs, extends OrderListItem)
+// ============================================
+export interface OrderDto extends OrderListItem {
+  // Guest Details
+  guestFirstName?: string
+  guestLastName?: string
+  guestPhone?: string
+  oneClickAddress?: string
 
-export interface OrderShippingMethod extends BaseEntity {
-  orderId: string
-  shippingMethodId: string
-  trackingNumber?: string
-  shippedDate?: Date
-  deliveredDate?: Date
-  order?: Order
-  shippingMethod?: ShippingMethod
-}
-
-// DTOs
-export interface CreateOrderDto {
-  userId?: string
-  isOneClick: boolean
-  guestInfo?: {
-    email: string
-    firstName: string
-    lastName: string
-    phone: string
-    address: string
-  }
-  items: {
-    productId: string
-    quantity: number
-    unitPrice: number
-  }[]
-  paymentMethodId: string
-  shippingMethodId: string
-  couponCode?: string
+  // Order Details
   notes?: string
+
+  // Items
+  orderItems: OrderItemDto[]
+
+  // Shipping
+  shipping?: OrderShippingDto
+
+  // Payment
+  payment?: OrderPaymentDto
+
+  // Coupons
+  appliedCoupons: OrderCouponDto[]
 }
 
-export interface OrderListItem {
-  id: string
-  orderNumber: string
-  customerName: string
-  customerEmail: string
-  totalAmount: number
-  finalAmount: number
-  orderStatus: OrderStatus
-  paymentStatus: PaymentStatus
-  createdAt: Date
-  itemCount: number
+// ============================================
+// ORDER FILTER (Map 1:1 với OrderFilter.cs)
+// ============================================
+export interface OrderFilterParams {
+  // Pagination (từ BasePaginationFilter)
+  page?: number
+  pageSize?: number
+  search?: string
+  sortBy?: string
+  isAscending?: boolean
+  status?: number
+
+  // Order specific filters
+  orderNumber?: string
+  userId?: string
+  userEmail?: string
+  guestEmail?: string
+  isOneClick?: boolean
+  paymentStatus?: PaymentStatus
+  orderStatus?: OrderStatus
+  minAmount?: number
+  maxAmount?: number
+  dateFrom?: string // ISO string
+  dateTo?: string // ISO string
+  hasCoupon?: boolean
+  productName?: string
+  categoryId?: string
+  animeSeriesId?: string
+  
+  // Index signature for compatibility with PaginationParams
+  [key: string]: string | number | boolean | undefined
 }

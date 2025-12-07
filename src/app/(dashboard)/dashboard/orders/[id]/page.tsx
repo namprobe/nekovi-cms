@@ -1,18 +1,11 @@
-import { Breadcrumb } from "@/features/dashboard/components/breadcrumb"
-import { OrderDetail } from "@/features/orders/components/order-detail"
+"use client"
 
-interface OrderDetailPageProps {
-  params: Promise<{
-    id: string
-  }>
-}
+import { useParams } from "next/navigation"
+import { OrderDetailView } from "@/features/orders/components/order-detail-view"
 
-export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
-  const { id } = await params
-  return (
-    <div>
-      <Breadcrumb />
-      <OrderDetail orderId={id} />
-    </div>
-  )
+export default function OrderDetailPage() {
+  const params = useParams()
+  const orderId = params?.id as string
+
+  return <OrderDetailView orderId={orderId} />
 }

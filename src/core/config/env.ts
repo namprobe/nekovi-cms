@@ -116,6 +116,12 @@ export const env = {
             UPDATE: (id: string) => `/product-inventory/${id}`,
             DELETE: (id: string) => `/product-inventory/${id}`,
         },
+        ORDER: {
+            LIST: `/orders`,
+            DETAIL: (id: string) => `/orders/${id}`,
+            SHIPPING_HISTORY: (id: string) => `/orders/${id}/shipping-history`,
+            EXPORT: `/orders/export`,
+        },
         DASHBOARD: `/dashboard`,
         REPORTS: `/reports`,
     }
