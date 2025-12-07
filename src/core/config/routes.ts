@@ -89,7 +89,7 @@ export const ROUTES = {
 
   // Settings
   SETTINGS: "/dashboard/settings",
-  PROFILE: "/dashboard/profile",
+  PROFILE: "/dashboard/settings?tab=profile",
 } as const
 
 export const API_ROUTES = {

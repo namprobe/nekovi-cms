@@ -92,7 +92,6 @@ export default function AnimeSeriesList() {
         setPage(1)
     }
 
-    // Handlers cũ (Delete, StatusBadge)...
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this anime series?")) return
         try {
