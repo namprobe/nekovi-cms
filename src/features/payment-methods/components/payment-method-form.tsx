@@ -100,7 +100,19 @@ export function PaymentMethodForm({ initialData, isEditing = false }: PaymentMet
       if (res.isSuccess) {
         router.push(ROUTES.PAYMENT_METHODS)
       } else {
-        setErrors({ general: res.message || "Failed to save payment method" })
+        // Handle validation errors from backend
+        const errorMessage = res.message || "Failed to save payment method"
+        
+        // Check if it's a duplicate name error
+        if (errorMessage.toLowerCase().includes("already exists") || 
+            errorMessage.toLowerCase().includes("duplicate")) {
+          setErrors({ 
+            name: "This payment gateway already exists. Please choose a different one or edit the existing one.",
+            general: errorMessage 
+          })
+        } else {
+          setErrors({ general: errorMessage })
+        }
       }
     } catch (err: any) {
       setErrors({ general: err?.message || "An unexpected error occurred" })

@@ -15,6 +15,7 @@ import { STATUS_VARIANTS } from "@/core/config/constants"
 import { paymentMethodService } from "@/entities/payment-methods/services/payment-method.service"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/use-debounce"
+import { env } from "@/core/config/env"
 
 export default function PaymentMethodList() {
   const router = useRouter()
@@ -29,6 +30,13 @@ export default function PaymentMethodList() {
 
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearch = useDebounce(searchTerm, 400)
+
+  // Helper function to get full image URL
+  const getImageUrl = (path?: string) => {
+    if (!path) return null
+    if (path.startsWith('http')) return path
+    return `${env.BASE_URL}${path}`
+  }
 
   const searchParams = useSearchParams()
 
@@ -169,7 +177,7 @@ export default function PaymentMethodList() {
                     {method.iconPath && (
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-100">
                         <img
-                          src={method.iconPath}
+                          src={getImageUrl(method.iconPath) || undefined}
                           alt={method.name}
                           className="object-cover w-full h-full"
                         />

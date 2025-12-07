@@ -12,6 +12,7 @@ import { badgeService } from "@/entities/badges/services/badge"
 import type { BadgeListItem } from "@/entities/badges/types/badge"
 import { BadgeFormDialog } from "./badge-form-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { env } from "@/core/config/env"
 
 export function BadgeList() {
   const { toast } = useToast()
@@ -25,6 +26,15 @@ export function BadgeList() {
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
   const [total, setTotal] = useState(0)
+  
+  // Helper function to get full image URL
+  const getImageUrl = (path?: string) => {
+    if (!path) return null
+    // If path already includes http/https, return as is
+    if (path.startsWith('http')) return path
+    // Otherwise, prepend backend base URL
+    return `${env.BASE_URL}${path}`
+  }
   
   const fetchBadges = async () => {
     try {
@@ -201,7 +211,7 @@ const handleSave = async (formData: FormData, isEdit: boolean, id?: string) => {
                     <div className="relative w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                       {badge.iconPath ? (
                         <img
-                          src={badge.iconPath}
+                          src={getImageUrl(badge.iconPath) || undefined}
                           alt={badge.name}
                           className="object-cover w-full h-full"
                         />
