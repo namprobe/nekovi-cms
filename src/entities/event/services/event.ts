@@ -1,3 +1,4 @@
+
 //src/entities/event/types/event.ts
 import { apiClient } from "@/core/lib/api-client"
 import type { PaginateResult } from "@/shared/types/common"
