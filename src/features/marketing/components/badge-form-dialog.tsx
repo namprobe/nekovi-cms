@@ -195,7 +195,8 @@ export function BadgeFormDialog({ open, onOpenChange, editingBadge, onSave }: Ba
     formDataToSend.append("ConditionType", formData.conditionType)
     formDataToSend.append("ConditionValue", formData.conditionValue.trim())
     formDataToSend.append("IsTimeLimited", formData.isTimeLimited.toString())
-    formDataToSend.append("IsActive", formData.isActive.toString())
+    // Status enum: 0 = Inactive, 1 = Active, 2 = Pending
+    formDataToSend.append("Status", formData.isActive ? "1" : "0")
 
     // Append dates nếu là time-limited
     if (formData.isTimeLimited) {
@@ -209,7 +210,7 @@ export function BadgeFormDialog({ open, onOpenChange, editingBadge, onSave }: Ba
 
     // Append icon file nếu có
     if (iconFile) {
-      formDataToSend.append("IconFile", iconFile)
+      formDataToSend.append("IconPath", iconFile)
     }
 
     // Debug FormData contents
