@@ -25,7 +25,7 @@ export type CreateUserPayload = {
 export const userService = {
     // Paginated list
     async getUsers(params: { page?: number; limit?: number; search?: string }) {
-        return apiClient.paginate<UserListItem[]>("/users", params)
+        return apiClient.paginate<UserListItem>("/users", params)
     },
 
     // Detail
