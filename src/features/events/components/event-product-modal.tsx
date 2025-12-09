@@ -200,9 +200,17 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                                 <Table>
                                     <TableBody>
                                         {items.map((item) => {
-                                            // Logic tính giá mới: Price - DiscountPrice - (Price * %Event)
+                                            // 1. Determine the starting price (Base Price)
+                                            // If product has a discount price > 0, use it. Otherwise use original price.
+                                            const basePrice = item.productDiscountPrice > 0 ? item.productDiscountPrice : item.originalPrice
+
+                                            // 2. Calculate Event Discount Amount
+                                            // Formula: originalPrice * discountPercentage%
                                             const eventDiscountAmount = (item.originalPrice * item.discountPercentage) / 100
-                                            const finalPrice = item.originalPrice - item.productDiscountPrice - eventDiscountAmount
+
+                                            // 3. Calculate New Price
+                                            // Formula: basePrice - eventDiscountAmount
+                                            const finalPrice = basePrice - eventDiscountAmount
                                             const displayPrice = finalPrice > 0 ? finalPrice : 0
 
                                             return (
@@ -212,33 +220,49 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                                                         <div className="font-medium line-clamp-2" title={item.productName}>
                                                             {item.productName}
                                                         </div>
+                                                        {/* Optional: Show if using product discount */}
+                                                        {item.productDiscountPrice > 0 && (
+                                                            <span className="text-xs text-muted-foreground">
+                                                                (Has product discount)
+                                                            </span>
+                                                        )}
                                                     </TableCell>
 
                                                     {/* Cột 2: Price gốc */}
-                                                    <TableCell className="w-[12%] text-right align-middle">
+                                                    <TableCell className="w-[12%] text-right align-middle text-muted-foreground line-through">
                                                         {formatCurrency(item.originalPrice)}
                                                     </TableCell>
 
-                                                    {/* Cột 3: Base Discount Price */}
-                                                    <TableCell className="w-[12%] text-right align-middle text-red-500 text-sm">
-                                                        {item.productDiscountPrice > 0 ? `-${formatCurrency(item.productDiscountPrice)}` : "-"}
+                                                    {/* Cột 3: Base Price (Giá sau khi giảm ở Product) */}
+                                                    <TableCell className="w-[12%] text-right align-middle font-medium">
+                                                        {item.productDiscountPrice > 0
+                                                            ? formatCurrency(item.productDiscountPrice)
+                                                            : "-"
+                                                        }
                                                     </TableCell>
 
-                                                    {/* Cột 4: Input Discount % */}
+                                                    {/* Cột 4: Input Discount % (Giảm thêm theo Event) */}
                                                     <TableCell className="w-[15%] align-middle">
-                                                        <div className="flex justify-center">
+                                                        <div className="flex justify-center items-center gap-1">
                                                             <Input
                                                                 type="number"
                                                                 min={0}
                                                                 max={100}
-                                                                className="w-20 h-8 text-center"
+                                                                className="w-16 h-8 text-center"
                                                                 value={item.discountPercentage}
                                                                 onChange={(e) => updateItem(item.productId, "discountPercentage", e.target.value)}
                                                             />
+                                                            <span className="text-sm text-muted-foreground">%</span>
                                                         </div>
+                                                        {/* Optional: Show amount being deducted */}
+                                                        {item.discountPercentage > 0 && (
+                                                            <div className="text-[10px] text-center text-red-500 mt-1">
+                                                                -{formatCurrency(eventDiscountAmount)}
+                                                            </div>
+                                                        )}
                                                     </TableCell>
 
-                                                    {/* Cột 5: New Price */}
+                                                    {/* Cột 5: New Price (Giá cuối cùng) */}
                                                     <TableCell className="w-[15%] text-right align-middle font-bold text-green-600">
                                                         {formatCurrency(displayPrice)}
                                                     </TableCell>
