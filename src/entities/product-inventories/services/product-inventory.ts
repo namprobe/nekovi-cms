@@ -7,7 +7,6 @@ import type {
     ProductInventoryRequest,
     ProductInventoryFilter,
     ProductInventoryPaginatedResult,
-    ProductInventoryResponse,
 } from "../types/product-inventory"
 import type { ApiResult } from "@/shared/types/common"
 
@@ -36,8 +35,8 @@ export const productInventoryService = {
     },
 
     /** Lấy chi tiết một phiếu nhập kho */
-    getById: (id: string): Promise<ApiResult<ProductInventoryResponse>> => {
-        return apiClient.get<ProductInventoryResponse>(env.ENDPOINTS.PRODUCT_INVENTORY.DETAIL(id))
+    getById: (id: string): Promise<ApiResult<ProductInventoryItem>> => {
+        return apiClient.get<ProductInventoryItem>(env.ENDPOINTS.PRODUCT_INVENTORY.DETAIL(id))
     },
 
     /** Tạo mới phiếu nhập kho */

@@ -25,7 +25,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         name: product.name,
         description: product.description,
         price: product.price,
-        discountPrice: product.discountPrice,
+        discountPrice: product.discountPrice ?? undefined,
         stockQuantity: product.stockQuantity,
         categoryId: product.categoryId,
         animeSeriesId: product.animeSeriesId,
