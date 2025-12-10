@@ -14,20 +14,45 @@ import { categoryService } from "@/entities/categories/services/category"
 import type { Category } from "@/entities/categories/types/category"
 import { CategoryFormDialog } from "./category-form-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { useDebounce } from "@/hooks/use-debounce"   // ← ĐÃ CÓ
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useDebounce } from "@/hooks/use-debounce"
 
 export function CategoryList() {
   const { toast } = useToast()
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")                    // ← UI input
-  const debouncedSearch = useDebounce(searchTerm, 400)               // ← debounce
+  const [loading, setLoading] = useState(true)                  // ← UI input
+  // ← debounce
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
 
-  const [page, setPage] = useState(1)
   const [limit] = useState(10)
   const [total, setTotal] = useState(0)
+
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+
+  const initialPage = Number(searchParams.get("page")) || 1
+  const initialSearch = searchParams.get("search") || ""
+
+  const [page, setPage] = useState(initialPage)
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
+
+  const debouncedSearch = useDebounce(searchTerm, 400)
+
+  const updateUrl = (pageValue: number, searchValue: string) => {
+    const params = new URLSearchParams()
+
+    if (pageValue > 1) params.set("page", String(pageValue))
+    if (searchValue.trim() !== "") params.set("search", searchValue)
+
+    const query = params.toString()
+    router.replace(`${pathname}${query ? `?${query}` : ""}`)
+  }
+
+  useEffect(() => {
+    updateUrl(page, debouncedSearch)
+  }, [page, debouncedSearch])
 
   // ← Thêm ref để focus
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -55,11 +80,6 @@ export function CategoryList() {
   useEffect(() => {
     fetchCategories()
   }, [page, debouncedSearch])
-
-  // Reset page về 1 khi người dùng gõ (trước khi debounce)
-  useEffect(() => {
-    setPage(1)
-  }, [searchTerm])
 
   // ← Focus lại input khi loading xong
   useEffect(() => {
@@ -147,7 +167,10 @@ export function CategoryList() {
               ref={searchInputRef}  // ← Thêm ref
               placeholder="Search categories..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}   // ← Chỉ cập nhật UI
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setPage(1)
+              }}  // ← Chỉ cập nhật UI
               className="pl-10"
             />
           </div>

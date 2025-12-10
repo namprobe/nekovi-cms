@@ -1,3 +1,4 @@
+
 //src/entities/event/types/event.ts
 import type { ApiResult, BaseEntity } from "@/shared/types/common"
 

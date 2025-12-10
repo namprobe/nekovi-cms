@@ -27,7 +27,7 @@ export const useAnimeSeriesSelectStore = create<AnimeSeriesSelectState>()(
         fetchOptions: async (search = "") => {
             try {
                 set({ isLoading: true, error: null })
-                const endpoint = `${env.ENDPOINTS.ANIME.SELECT_LIST}${search ? `?search=${encodeURIComponent(search)}` : ""}`
+                const endpoint = `${env.ENDPOINTS.ANIME_SERIES.SELECT_LIST}${search ? `?search=${encodeURIComponent(search)}` : ""}`
                 const url = `${endpoint}`
                 const res = await apiClient.get<AnimeSeriesSelectItem[]>(url)
                 if (res.isSuccess && res.data) {

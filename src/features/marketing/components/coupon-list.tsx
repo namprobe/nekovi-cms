@@ -277,7 +277,7 @@ const handleSave = async (formData: FormData, isEdit: boolean, id?: string) => {
               <TableRow key={coupon.id} className={isCouponExpired(coupon.endDate) ? "opacity-60" : ""}>
                 <TableCell>
                   <div className="flex items-center space-x-2">
-                    <span className="font-mono font-medium bg-blue-50 px-2 py-1 rounded text-sm">
+                    <span className="font-mono font-medium bg-blue-50 dark:bg-blue-950 dark:text-blue-100 px-2 py-1 rounded text-sm">
                       {coupon.code}
                     </span>
                     <Button

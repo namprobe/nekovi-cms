@@ -1,8 +1,8 @@
 // src/features/blog-post/components/blog-post-list.tsx
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {
   Table,
   TableBody,
@@ -39,67 +39,85 @@ import { STATUS_VARIANTS } from "@/core/config/constants"
 import { ROUTES } from "@/core/config/routes"
 import { Search, Plus, MoreHorizontal, Edit, Trash2, Eye } from "lucide-react"
 import { toast } from "sonner"
+import { useDebounce } from "@/hooks/use-debounce"
+import { usePostCategoryFilterOption } from "@/entities/post-category/hooks/usePostCategoryFilterOption"
 
-const publishStatusOptions = [
+const PUBLISH_STATUS_OPTIONS = [
   { value: "all", label: "All Posts" },
   { value: "published", label: "Published" },
   { value: "draft", label: "Draft" },
 ]
 
+const PAGE_SIZE = 10
+
 export function BlogPostList() {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  // FILTER STATES
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedPublishStatus, setSelectedPublishStatus] = useState("all")
-  const [selectedCategoryId, setSelectedCategoryId] = useState("")
+  // 1. Đọc state ban đầu từ URL
+  const initialPage = Number(searchParams.get("page")) || 1
+  const initialSearch = searchParams.get("search") || ""
+  const initialCategory = searchParams.get("category") || ""
+  const initialStatus = searchParams.get("status") || "all"
 
-  // DATA STATES
-  const [allPosts, setAllPosts] = useState<BlogPostListItem[]>([])
-  const [filteredPosts, setFilteredPosts] = useState<BlogPostListItem[]>([])
+  // State UI
+  const [page, setPage] = useState(initialPage)
+  const [searchTerm, setSearchTerm] = useState(initialSearch)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(initialCategory)
+  const [selectedPublishStatus, setSelectedPublishStatus] = useState(initialStatus)
+
+  // Debounce search
+  const debouncedSearch = useDebounce(searchTerm, 400)
+
+  // Data
+  const [posts, setPosts] = useState<BlogPostListItem[]>([])
+  const [totalItems, setTotalItems] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // PAGINATION
-  const [page, setPage] = useState(1)
-  const [pageSize] = useState(10)
-  const [totalPages, setTotalPages] = useState(1)
-
-  // DELETE STATE
+  // Dialogs
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-
   const [publishingId, setPublishingId] = useState<string | null>(null)
-  // Category hook
+
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const fetchCategoryOptions = usePostCategoryOptions()
+  const { selectedOption: initialCategoryOption } = usePostCategoryFilterOption(initialCategory)
 
-  const fetchOptionsWithAll = useCallback(
-    async (search: string): Promise<Option[]> => {
-      const options = await fetchCategoryOptions(search)
+  // 2. Cập nhật URL khi state thay đổi
+  const updateUrl = useCallback(() => {
+    const params = new URLSearchParams()
 
-      // Dùng "all" thay vì ""
-      const allOption: Option = { id: "all", label: "All Categories" }
+    if (page > 1) params.set("page", String(page))
+    if (debouncedSearch.trim()) params.set("search", debouncedSearch.trim())
+    if (selectedCategoryId) params.set("category", selectedCategoryId)
+    if (selectedPublishStatus !== "all") params.set("status", selectedPublishStatus)
 
-      const filteredOptions = options.filter(opt => opt.id !== "all")
+    const query = params.toString()
+    // Dùng replace để không tạo thêm history entry thừa, scroll false để ko bị nhảy trang
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false })
+  }, [page, debouncedSearch, selectedCategoryId, selectedPublishStatus, pathname, router])
 
-      return [allOption, ...filteredOptions]
-    },
-    [fetchCategoryOptions]
-  )
+  // Effect sync URL
+  useEffect(() => {
+    updateUrl()
+  }, [updateUrl])
 
-  // FETCH POSTS
+  // 3. XÓA BỎ useEffect reset page tự động tại đây (đã xóa)
+
+  // 4. Fetch posts
   const fetchPosts = useCallback(async () => {
     setLoading(true)
-    setError(null)
 
     const filter: BlogPostFilter = {
+      search: debouncedSearch || undefined,
+      postCategoryId: selectedCategoryId || undefined,
       isPublished:
         selectedPublishStatus === "all"
           ? undefined
           : selectedPublishStatus === "published",
-      postCategoryId: selectedCategoryId === "" ? undefined : selectedCategoryId,
       page,
-      pageSize,
+      pageSize: PAGE_SIZE,
       sortBy: "publishdate",
       sortOrder: "desc",
     }
@@ -107,119 +125,68 @@ export function BlogPostList() {
     try {
       const result = await blogPostService.getBlogPosts(filter)
       if (result.isSuccess) {
-        setAllPosts(result.items)
-        setFilteredPosts(result.items)
-        setTotalPages(result.totalPages)
-        if (page === 1) applyFilters(result.items)
+        setPosts(result.items ?? [])
+        setTotalItems(result.totalItems ?? 0)
       } else {
-        setError(result.errors?.[0] || "Failed to load posts")
+        toast.error(result.errors?.[0] || "Không tải được danh sách bài viết")
       }
     } catch (err) {
-      setError("Network error")
+      console.error(err)
+      toast.error("Lỗi mạng")
     } finally {
       setLoading(false)
     }
-  }, [selectedPublishStatus, selectedCategoryId, page, pageSize])
+  }, [page, debouncedSearch, selectedCategoryId, selectedPublishStatus])
 
-  // CLIENT-SIDE FILTERING
-  const applyFilters = useCallback(
-    (posts: BlogPostListItem[]) => {
-      let filtered = [...posts]
-
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase()
-        filtered = filtered.filter(
-          (post) =>
-            post.title.toLowerCase().includes(term) ||
-            (post.authorName && post.authorName.toLowerCase().includes(term)) ||
-            (post.postCategory?.name &&
-              post.postCategory.name.toLowerCase().includes(term))
-        )
-      }
-
-      if (selectedPublishStatus !== "all") {
-        const isPublished = selectedPublishStatus === "published"
-        filtered = filtered.filter((post) => post.isPublished === isPublished)
-      }
-
-      setFilteredPosts(filtered)
-    },
-    [searchTerm, selectedPublishStatus]
-  )
-
-  // EFFECTS
   useEffect(() => {
     fetchPosts()
   }, [fetchPosts])
 
+  // Focus input sau khi load (chỉ focus nếu có search term để tránh khó chịu)
   useEffect(() => {
-    applyFilters(allPosts)
-  }, [searchTerm, selectedPublishStatus, allPosts, applyFilters])
+    if (!loading && searchInputRef.current && searchTerm) {
+      searchInputRef.current.focus()
+    }
+  }, [loading])
 
-  useEffect(() => {
-    setPage(1)
-  }, [selectedPublishStatus, selectedCategoryId])
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE)
 
-  // UI HELPERS
-  const getStatusBadge = (status: number) => {
-    const variant =
-      STATUS_VARIANTS[status as keyof typeof STATUS_VARIANTS] || "neutral"
-    const statusText = status === 1 ? "Active" : "Inactive"
-    return <Badge variant={variant}>{statusText}</Badge>
+  const fetchOptionsWithAll = async (search: string): Promise<Option[]> => {
+    const options = await fetchCategoryOptions(search)
+    const allOption: Option = { id: "all", label: "All Categories" }
+    const filtered = options.filter(o => o.id !== "all")
+    return [allOption, ...filtered]
   }
 
-  const getPublishBadge = (isPublished: boolean) => {
-    return isPublished ? (
-      <Badge variant="success">Published</Badge>
-    ) : (
-      <Badge variant="warning">Draft</Badge>
-    )
-  }
-
-  const formatDate = (date: string | Date) => {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(date))
-  }
-
-  // HANDLE TOGGLE PUBLISH
-  const handleTogglePublish = async (postId: string, currentStatus: boolean) => {
-    if (publishingId === postId) return // Prevent double click
-
+  const handleTogglePublish = async (postId: string, current: boolean) => {
+    if (publishingId === postId) return
     setPublishingId(postId)
-    const newStatus = !currentStatus
-
     try {
-      const result = await blogPostService.publishBlogPost(postId, newStatus)
+      const result = await blogPostService.publishBlogPost(postId, !current)
       if (result.isSuccess) {
-        toast.success(newStatus ? "Đã đăng bài" : "Đã hủy đăng")
-        fetchPosts() // refresh
+        toast.success(!current ? "Đã đăng bài" : "Đã hủy đăng")
+        fetchPosts()
       } else {
         toast.error(result.message || "Cập nhật thất bại")
       }
-    } catch (err) {
-      console.error("Publish error:", err)
+    } catch {
       toast.error("Lỗi mạng")
     } finally {
-      setPublishingId(null) // Luôn reset
+      setPublishingId(null)
     }
   }
 
-  // HANDLE DELETE
-  const handleDeletePost = async (id: string) => {
+  const handleDelete = async (id: string) => {
     setIsDeleting(true)
     try {
       const result = await blogPostService.deleteBlogPost(id)
       if (result.isSuccess) {
-        toast.success("Xóa bài viết thành công!")
-        setAllPosts((prev) => prev.filter((p) => p.id !== id))
-        setFilteredPosts((prev) => prev.filter((p) => p.id !== id))
+        toast.success("Xóa bài viết thành công")
+        fetchPosts()
       } else {
         toast.error(result.errors?.[0] || "Xóa thất bại")
       }
-    } catch (err) {
+    } catch {
       toast.error("Lỗi mạng")
     } finally {
       setIsDeleting(false)
@@ -227,13 +194,24 @@ export function BlogPostList() {
     }
   }
 
-  // LOADING UI
-  if (loading) {
+  const getStatusBadge = (status: number) => {
+    const variant = STATUS_VARIANTS[status as keyof typeof STATUS_VARIANTS] || "neutral"
+    return <Badge variant={variant}>{status === 1 ? "Active" : "Inactive"}</Badge>
+  }
+
+  const getPublishBadge = (isPublished: boolean) => (
+    isPublished ? <Badge variant="success">Published</Badge> : <Badge variant="warning">Draft</Badge>
+  )
+
+  const formatDate = (date: string | Date) =>
+    new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(date))
+
+  if (loading && posts.length === 0) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center space-x-4">
                 <div className="bg-gray-200 border-2 border-dashed rounded-xl w-12 h-12" />
                 <div className="flex-1 space-y-2">
@@ -243,16 +221,6 @@ export function BlogPostList() {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-red-500 text-center">{error}</p>
         </CardContent>
       </Card>
     )
@@ -269,33 +237,54 @@ export function BlogPostList() {
           </Button>
         </div>
 
-        {/* SEARCH + FILTERS */}
-        <div className="flex items-center space-x-4 mt-4">
+        <div className="flex flex-col sm:flex-row gap-4 mt-4">
+          {/* Search */}
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
+              ref={searchInputRef}
               placeholder="Search posts..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              // 5. Reset Page = 1 khi gõ
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setPage(1)
+              }}
               className="pl-10"
             />
           </div>
 
-          <div className="w-48">
+          {/* Category Filter */}
+          <div className="w-full sm:w-64">
             <AsyncSelect
-              value={selectedCategoryId}
-              onChange={(val) => setSelectedCategoryId(val === "all" ? "" : val)}
+              value={selectedCategoryId || "all"}
+              // 6. Reset Page = 1 khi đổi category
+              onChange={(val) => {
+                setSelectedCategoryId(val === "all" ? "" : val)
+                setPage(1)
+              }}
               fetchOptions={fetchOptionsWithAll}
-              placeholder="Category"
+              placeholder="All Categories"
+              clearable={false}
+              initialSelectedOption={
+                selectedCategoryId && selectedCategoryId !== "all"
+                  ? initialCategoryOption
+                  : { id: "all", label: "All Categories" }
+              }
             />
           </div>
 
+          {/* Publish status */}
           <select
             value={selectedPublishStatus}
-            onChange={(e) => setSelectedPublishStatus(e.target.value)}
-            className="px-3 py-2 border rounded-md text-sm w-40"
+            // 7. Reset Page = 1 khi đổi status
+            onChange={(e) => {
+              setSelectedPublishStatus(e.target.value)
+              setPage(1)
+            }}
+            className="px-4 py-2 border rounded-md text-sm"
           >
-            {publishStatusOptions.map((opt) => (
+            {PUBLISH_STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -314,11 +303,11 @@ export function BlogPostList() {
               <TableHead>Publish Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Published</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPosts.map((post) => (
+            {posts.map((post) => (
               <TableRow key={post.id}>
                 <TableCell>
                   <div className="flex items-center space-x-3">
@@ -340,7 +329,9 @@ export function BlogPostList() {
                     </div>
                   </div>
                 </TableCell>
+
                 <TableCell>{post.authorName || "-"}</TableCell>
+
                 <TableCell>
                   {post.postCategory?.name ? (
                     <Badge variant="outline">{post.postCategory.name}</Badge>
@@ -348,11 +339,15 @@ export function BlogPostList() {
                     <span className="text-gray-400">-</span>
                   )}
                 </TableCell>
+
                 <TableCell className="text-sm text-gray-600">
                   {formatDate(post.publishDate)}
                 </TableCell>
+
                 <TableCell>{getStatusBadge(post.status)}</TableCell>
+
                 <TableCell>{getPublishBadge(post.isPublished)}</TableCell>
+
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -367,38 +362,29 @@ export function BlogPostList() {
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </DropdownMenuItem>
+
                       <DropdownMenuItem
                         onClick={() => router.push(ROUTES.BLOG_POST_EDIT(post.id))}
                       >
                         <Edit className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
+
                       <DropdownMenuItem
                         onClick={() => handleTogglePublish(post.id, post.isPublished)}
                         disabled={publishingId === post.id}
-                        className="flex items-center justify-between"
                       >
-                        <div className="flex items-center">
-                          {publishingId === post.id ? (
-                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
-                          ) : (
-                            <Eye className="mr-2 h-4 w-4" />
-                          )}
-                          <span>
-                            {publishingId === post.id
-                              ? "Đang xử lý..."
-                              : post.isPublished
-                                ? "Unpublish"
-                                : "Publish"}
-                          </span>
-                        </div>
+                        {publishingId === post.id ? (
+                          <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                        ) : (
+                          <Eye className="mr-2 h-4 w-4" />
+                        )}
+                        {post.isPublished ? "Unpublish" : "Publish"}
                       </DropdownMenuItem>
+
                       <DropdownMenuItem
                         className="text-red-600"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setDeleteId(post.id)
-                        }}
+                        onClick={() => setDeleteId(post.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
@@ -411,52 +397,53 @@ export function BlogPostList() {
           </TableBody>
         </Table>
 
-        {/* EMPTY STATE */}
-        {filteredPosts.length === 0 && !loading && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">No blog posts found</p>
+        {posts.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No blog posts found
           </div>
         )}
 
-        {/* PAGINATION */}
+        {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2 mt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-gray-600">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page === totalPages}
-            >
-              Next
-            </Button>
+          <div className="flex items-center justify-between mt-6">
+            <div className="text-sm text-gray-600">
+              Showing {(page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, totalItems)} of {totalItems} posts
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
 
-      {/* DELETE CONFIRM DIALOG */}
-      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+      {/* Delete confirm */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận xóa bài viết</AlertDialogTitle>
             <AlertDialogDescription>
-              Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa bài viết này?
+              Hành động này không thể hoàn tác. Bạn có chắc muốn xóa?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteId && handleDeletePost(deleteId)}
+              onClick={() => deleteId && handleDelete(deleteId)}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700"
             >

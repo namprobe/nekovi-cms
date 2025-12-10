@@ -15,13 +15,25 @@ export const ROUTES = {
   USER_DETAIL: (id: string) => `/dashboard/users/${id}`,
   USER_EDIT: (id: string) => `/dashboard/users/${id}/edit`,
 
+  // Anime Series management
+  ANIME_SERIES: "/dashboard/anime-series",
+  ANIME_SERIES_CREATE: "/dashboard/anime-series/create",
+  ANIME_SERIES_EDIT: (id: string) => `/dashboard/anime-series/${id}/edit`,
+  ANIME_SERIES_DETAIL: (id: string) => `/dashboard/anime-series/${id}`,
 
   // Product management
   PRODUCTS: "/dashboard/products",
   PRODUCT_DETAIL: (id: string) => `/dashboard/products/${id}`,
   PRODUCT_EDIT: (id: string) => `/dashboard/products/${id}/edit`,
   PRODUCT_CREATE: "/dashboard/products/create",
+
+  //Quản lý tồn kho của từng sản phẩm
+  PRODUCT_INVENTORY_LIST: (productId: string) => `/dashboard/products/${productId}/inventory`,
+
   CATEGORIES: "/dashboard/categories",
+
+  // Tag management
+  TAGS: "/dashboard/tags",
 
   // Order management
   ORDERS: "/dashboard/orders",
@@ -60,12 +72,24 @@ export const ROUTES = {
   BADGE_EDIT: (id: string) => `/dashboard/marketing/badges/${id}/edit`,
   BADGE_CREATE: "/dashboard/marketing/badges/create",
 
+  // Payment Methods
+  PAYMENT_METHODS: "/dashboard/payment-methods",
+  PAYMENT_METHOD_CREATE: "/dashboard/payment-methods/create",
+  PAYMENT_METHOD_EDIT: (id: string) => `/dashboard/payment-methods/${id}/edit`,
+  PAYMENT_METHOD_DETAIL: (id: string) => `/dashboard/payment-methods/${id}`,
+
+  // Shipping Methods
+  SHIPPING_METHODS: "/dashboard/shipping-methods",
+  SHIPPING_METHOD_CREATE: "/dashboard/shipping-methods/create",
+  SHIPPING_METHOD_EDIT: (id: string) => `/dashboard/shipping-methods/${id}/edit`,
+  SHIPPING_METHOD_DETAIL: (id: string) => `/dashboard/shipping-methods/${id}`,
+
   // Reports
   REPORTS: "/dashboard/reports",
 
   // Settings
   SETTINGS: "/dashboard/settings",
-  PROFILE: "/dashboard/profile",
+  PROFILE: "/dashboard/settings?tab=profile",
 } as const
 
 export const API_ROUTES = {
@@ -104,6 +128,14 @@ export const API_ROUTES = {
   COUPON_BY_ID: (id: string) => `/api/marketing/coupons/${id}`,
   BADGES: "/api/marketing/badges",
   BADGE_BY_ID: (id: string) => `/api/marketing/badges/${id}`,
+
+  // Payment Methods
+  PAYMENT_METHODS: "/payment-methods",
+  PAYMENT_METHOD_BY_ID: (id: string) => `/payment-methods/${id}`,
+
+  // Shipping Methods
+  SHIPPING_METHODS: "/shipping-methods",
+  SHIPPING_METHOD_BY_ID: (id: string) => `/shipping-methods/${id}`,
 
   // Reports
   DASHBOARD_STATS: "/api/reports/dashboard",

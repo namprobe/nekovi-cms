@@ -10,6 +10,7 @@ import { ChevronRight, Home } from "lucide-react"
 import { ROUTES } from "@/core/config/routes"
 import { useEventDetail } from "@/features/marketing/hooks/use-events"
 import { useBlogPostDetail } from "@/features/blog-post/hooks/use-blog-post-detail"
+import { useAnimeSeriesDetail } from "@/features/anime-series/hooks/use-anime-series-detail"
 
 interface BreadcrumbItem {
   label: string
@@ -27,8 +28,8 @@ const routeLabels: Record<string, string> = {
   settings: "Settings",
   create: "Create",
   categories: "Categories",
-    coupons: "Coupons",
-
+  coupons: "Coupons",
+  "anime-series": "Anime Series",
 }
 
 export function Breadcrumb() {
@@ -43,6 +44,9 @@ export function Breadcrumb() {
   // get blog post id from url if exists
   const blogPostId = segments.length > 2 && segments[1] === "blog" ? segments[2] : undefined
   const { item: blogPost, loading: blogPostLoading } = useBlogPostDetail(blogPostId)
+  // get anime series id from url if exists
+  const animeId = segments.length > 2 && segments[1] === "anime-series" ? segments[2] : undefined
+  const { item: animeSeries, loading: animeLoading } = useAnimeSeriesDetail(animeId || "")
 
 
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
@@ -70,6 +74,8 @@ export function Breadcrumb() {
           label = event.name || label
         } else if (segments[1] === "blog" && blogPost && !blogPostLoading) {
           label = blogPost.title || label
+        } else if (segments[1] === "anime-series" && animeSeries && !animeLoading) {
+          label = animeSeries.title || label
         }
       }
 

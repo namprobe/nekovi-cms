@@ -142,8 +142,12 @@ export function ProductForm({ initialData, isEditing = false }: ProductFormProps
     }
     if (!isEditing && !formData.categoryId) newErrors.categoryId = "Category is required"
     if (!isEditing && formData.price <= 0) newErrors.price = "Price must be greater than 0"
-    if (formData.discountPrice && (formData.discountPrice > 100 || formData.discountPrice < 0))
-      newErrors.discountPrice = "Discount price must be between 0 and 100"
+    if (formData.discountPrice && formData.price > 0 && formData.discountPrice > formData.price) {
+      newErrors.discountPrice = `Discount price cannot be greater than original price (${formData.price.toLocaleString()}₫)`
+    }
+    if (formData.discountPrice && formData.discountPrice < 0) {
+      newErrors.discountPrice = "Discount price cannot be negative"
+    }
     if (formData.stockQuantity < 0) newErrors.stockQuantity = "Stock quantity cannot be negative"
     if (formData.isPreOrder && !formData.preOrderReleaseDate)
       newErrors.preOrderReleaseDate = "Pre-order release date is required"

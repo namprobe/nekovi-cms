@@ -1,6 +1,6 @@
 export const APP_CONFIG = {
-  APP_NAME: "Anime CMS",
-  APP_DESCRIPTION: "Content Management System for Anime Ecommerce",
+  APP_NAME: "NekoVi CMS",
+  APP_DESCRIPTION: "Content Management System for NekoVi Ecommerce",
   VERSION: "1.0.0",
 
   // Pagination

@@ -39,12 +39,16 @@ export const env = {
             REFRESH_TOKEN: "/auth/refresh-token",
         },
         PRODUCT: {
-            LIST: `${CMS_PREFIX}/products`,
-            DETAIL: (id: string) => `${CMS_PREFIX}/products/${id}`,
-            CREATE: `${CMS_PREFIX}/products`,   // POST tạo mới
-            UPDATE: (id: string) => `${CMS_PREFIX}/products/${id}`, // PUT/PATCH
-            DELETE: (id: string) => `${CMS_PREFIX}/products/${id}`, // DELETE
-            UPLOAD_IMAGE: `${CMS_PREFIX}/product-image`, // POST upload ảnh
+            LIST: `/products`,
+            DETAIL: (id: string) => `/products/${id}`,
+            CREATE: `/products`,   // POST tạo mới
+            UPDATE: (id: string) => `/products/${id}`, // PUT/PATCH
+            DELETE: (id: string) => `/products/${id}`, // DELETE
+            UPLOAD_IMAGE: `/product-image`, // POST upload ảnh
+            SELECT_LIST: `/products/select-list`,
+        },
+        PRODUCT_IMAGE: {
+            CREATE: `/product-image`,
         },
         CATEGORY: {
             SELECT_LIST: `/categories/select-list`,
@@ -54,11 +58,21 @@ export const env = {
             UPDATE: (id: string) => `/categories/${id}`, // PUT/PATCH
             DELETE: (id: string) => `/categories/${id}`, // DELETE
         },
-        ANIME: {
-            SELECT_LIST: `/anime-series/select-list`
+        ANIME_SERIES: {
+            SELECT_LIST: `/anime-series/select-list`,
+            LIST: `/anime-series`,
+            DETAIL: (id: string) => `/anime-series/${id}`,
+            CREATE: `/anime-series`,
+            UPDATE: (id: string) => `/anime-series/${id}`,
+            DELETE: (id: string) => `/anime-series/${id}`,
         },
         TAG: {
             SELECT_LIST: `/tags/select-list`,
+            LIST: `/tags`,
+            DETAIL: (id: string) => `/tags/${id}`,
+            CREATE: `/tags`,
+            UPDATE: (id: string) => `/tags/${id}`,
+            DELETE: (id: string) => `/tags/${id}`,
         },
         EVENT: {
             LIST: `/events`,
@@ -66,6 +80,10 @@ export const env = {
             CREATE: `/events`,
             UPDATE: (id: string) => `/events/${id}`,
             DELETE: (id: string) => `/events/${id}`,
+        },
+        EVENT_PRODUCT: {
+            SAVE: (id: string) => `/event-products/${id}/products/save`,
+            LIST_BY_EVENT: (id: string) => `/event-products/by-event/${id}`,
         },
         BLOGPOST: {
             LIST: `/blog-posts`,
@@ -90,7 +108,22 @@ export const env = {
             CREATE: `/home-images`,
             UPDATE: (id: string) => `/home-images/${id}`,
             DELETE: (id: string) => `/home-images/${id}`,
-        }
+        },
+        PRODUCT_INVENTORY: {
+            LIST: `/product-inventory`,
+            DETAIL: (id: string) => `/product-inventory/${id}`,
+            CREATE: `/product-inventory`,
+            UPDATE: (id: string) => `/product-inventory/${id}`,
+            DELETE: (id: string) => `/product-inventory/${id}`,
+        },
+        ORDER: {
+            LIST: `/orders`,
+            DETAIL: (id: string) => `/orders/${id}`,
+            SHIPPING_HISTORY: (id: string) => `/orders/${id}/shipping-history`,
+            EXPORT: `/orders/export`,
+        },
+        DASHBOARD: `/dashboard`,
+        REPORTS: `/reports`,
     }
 } as const;
 

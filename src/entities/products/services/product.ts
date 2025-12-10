@@ -3,24 +3,18 @@ import { apiClient } from "@/core/lib/api-client"
 import type {
     Product,
     ProductListItem,
-    CreateProductDto,
-    UpdateProductDto
 } from "@/entities/products/types/product"
 import type { PaginateResult, ApiResult } from "@/shared/types/common"
+import { env } from "@/core/config/env"
 
-/**
- * productService - wrapper cho tất cả endpoint /products
- * NOTE:
- *  - list => apiClient.paginate("/products", params)
- *  - detail => apiClient.get("/products/{id}")
- *  - create/update with files => sử dụng postFormData / putFormData
- */
 
 export const productService = {
-    // Paginated list (params: page, limit, search, categoryId, sortBy, sortOrder...)
-    // getProducts: (params?: Record<string, any>) =>
-    //     apiClient.paginate<ProductListItem>("/products", params),
-    async getProducts(params: { page?: number; limit?: number; search?: string }) {
+    async getProducts(params: {
+        page?: number
+        limit?: number
+        search?: string
+        stockStatus?: "in-stock" | "low-stock" | "out-of-stock"
+    }) {
         return apiClient.paginate<ProductListItem[]>("/products", params)
     },
 
@@ -39,4 +33,11 @@ export const productService = {
     // Delete
     deleteProduct: (id: string) =>
         apiClient.delete<ApiResult<any>>(`/products/${id}`),
+
+    getSelectList: (search?: string) => {
+        const url =
+            env.ENDPOINTS.PRODUCT.SELECT_LIST +
+            (search ? `?search=${encodeURIComponent(search)}` : "")
+        return apiClient.get<{ id: string; name: string }[]>(url)
+    },
 }

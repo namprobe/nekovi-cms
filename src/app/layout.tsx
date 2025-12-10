@@ -16,8 +16,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Anime CMS",
-  description: "Content Management System for Anime Store",
+  title: "NekoVi CMS",
+  description: "Content Management System for NekoVi Store",
 };
 
 export default function RootLayout({

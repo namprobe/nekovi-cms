@@ -6,7 +6,8 @@ export interface Product extends BaseEntity {
   name: string
   description?: string
   price: number
-  discountPrice?: number
+  discountPrice?: number | null // Cập nhật có thể null
+  eventDiscountPercentage?: number | null // [MỚI] % giảm giá từ sự kiện
   stockQuantity: number
   categoryId: string
   animeSeriesId?: string
@@ -18,13 +19,11 @@ export interface Product extends BaseEntity {
   productTags?: ProductTag[]
   inventory?: ProductInventory
   reviews?: ProductReview[]
-  events?: EventItem[] // Thêm events để khớp với ProductResponse
-  totalSales: number // Bỏ optional để khớp với ProductResponse
-  averageRating: number // Bỏ optional để khớp với ProductResponse
+  events?: EventItem[]
+  totalSales: number
+  averageRating: number
   status: number
 }
-
-
 
 export interface AnimeSeries extends BaseEntity {
   title: string
@@ -54,7 +53,7 @@ export interface ProductReview extends BaseEntity {
   rating: number
   title?: string
   comment?: string
-  userName?: string // Thêm userName để khớp với ProductReviewResponse
+  userName?: string
   user?: {
     id: string
     firstName: string
@@ -125,7 +124,8 @@ export interface ProductListItem {
   id: string
   name: string
   price: number
-  discountPrice?: number
+  discountPrice?: number | null
+  eventDiscountPercentage?: number | null // [MỚI] % giảm giá từ sự kiện
   stockQuantity: number
   category: {
     name: string
@@ -138,7 +138,7 @@ export interface ProductListItem {
   isPreOrder: boolean
 }
 
-// ProductResponse giữ nguyên như bạn đã cung cấp
+// ProductResponse
 export interface ProductResponse {
   id: string
   name: string
@@ -150,7 +150,8 @@ export interface ProductResponse {
   price: number
   createdAt: Date
   description?: string
-  discountPrice?: number
+  discountPrice?: number | null
+  eventDiscountPercentage?: number | null // [MỚI] % giảm giá từ sự kiện
   isPreOrder: boolean
   preOrderReleaseDate?: Date
   images?: { imagePath: string; isPrimary: boolean }[]

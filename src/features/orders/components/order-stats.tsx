@@ -1,3 +1,4 @@
+// src/features/orders/components/order-stats.tsx
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
@@ -5,38 +6,34 @@ import { Badge } from "@/shared/ui/badge"
 import { ShoppingCart, Clock, Package, CheckCircle, DollarSign, TrendingUp } from "lucide-react"
 
 interface OrderStatsProps {
-  stats?: {
-    totalOrders: number
-    pendingOrders: number
-    processingOrders: number
-    completedOrders: number
-    totalRevenue: number
-    averageOrderValue: number
-  }
+  totalOrders?: number
+  pendingOrders?: number
+  processingOrders?: number
+  completedOrders?: number
+  totalRevenue?: number
+  avgOrderValue?: number
 }
 
-// Mock data - replace with actual API call
-const mockStats = {
-  totalOrders: 1247,
-  pendingOrders: 23,
-  processingOrders: 45,
-  completedOrders: 1179,
-  totalRevenue: 89750.5,
-  averageOrderValue: 72.15,
-}
-
-export function OrderStats({ stats = mockStats }: OrderStatsProps) {
+export function OrderStats({
+  totalOrders = 0,
+  pendingOrders = 0,
+  processingOrders = 0,
+  completedOrders = 0,
+  totalRevenue = 0,
+  avgOrderValue = 0,
+}: OrderStatsProps) {
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
+      minimumFractionDigits: 0,
     }).format(price)
   }
 
   const statsCards = [
     {
       title: "Total Orders",
-      value: stats.totalOrders.toLocaleString(),
+      value: totalOrders.toLocaleString(),
       change: "+12%",
       changeType: "positive" as const,
       icon: ShoppingCart,
@@ -44,18 +41,18 @@ export function OrderStats({ stats = mockStats }: OrderStatsProps) {
       bgColor: "bg-blue-50 dark:bg-blue-950",
     },
     {
-      title: "Pending Orders",
-      value: stats.pendingOrders.toString(),
-      change: "-5%",
-      changeType: "negative" as const,
+      title: "Pending Payment",
+      value: pendingOrders.toString(),
+      change: pendingOrders > 50 ? "+8%" : "-15%",
+      changeType: pendingOrders > 50 ? "positive" : "negative",
       icon: Clock,
       color: "text-yellow-600",
       bgColor: "bg-yellow-50 dark:bg-yellow-950",
     },
     {
       title: "Processing",
-      value: stats.processingOrders.toString(),
-      change: "+8%",
+      value: processingOrders.toString(),
+      change: "+22%",
       changeType: "positive" as const,
       icon: Package,
       color: "text-purple-600",
@@ -63,8 +60,8 @@ export function OrderStats({ stats = mockStats }: OrderStatsProps) {
     },
     {
       title: "Completed",
-      value: stats.completedOrders.toLocaleString(),
-      change: "+15%",
+      value: completedOrders.toLocaleString(),
+      change: "+18%",
       changeType: "positive" as const,
       icon: CheckCircle,
       color: "text-green-600",
@@ -72,17 +69,17 @@ export function OrderStats({ stats = mockStats }: OrderStatsProps) {
     },
     {
       title: "Total Revenue",
-      value: formatPrice(stats.totalRevenue),
-      change: "+18%",
+      value: formatPrice(totalRevenue),
+      change: "+25%",
       changeType: "positive" as const,
       icon: DollarSign,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50 dark:bg-emerald-950",
     },
     {
-      title: "Avg Order Value",
-      value: formatPrice(stats.averageOrderValue),
-      change: "+3%",
+      title: "Average Order Value",
+      value: formatPrice(avgOrderValue),
+      change: avgOrderValue > 1000000 ? "+7%" : "+2%",
       changeType: "positive" as const,
       icon: TrendingUp,
       color: "text-indigo-600",
@@ -91,13 +88,15 @@ export function OrderStats({ stats = mockStats }: OrderStatsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {statsCards.map((stat) => {
         const Icon = stat.icon
         return (
-          <Card key={stat.title}>
+          <Card key={stat.title} className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
               <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                 <Icon className={`h-4 w-4 ${stat.color}`} />
               </div>
@@ -109,13 +108,15 @@ export function OrderStats({ stats = mockStats }: OrderStatsProps) {
                   variant="outline"
                   className={
                     stat.changeType === "positive"
-                      ? "text-green-600 border-green-200 bg-green-50"
-                      : "text-red-600 border-red-200 bg-red-50"
+                      ? "text-green-600 border-green-300 bg-green-50"
+                      : "text-red-600 border-red-300 bg-red-50"
                   }
                 >
                   {stat.change}
                 </Badge>
-                <span className="text-xs text-muted-foreground ml-2">from last month</span>
+                <span className="text-xs text-muted-foreground ml-2">
+                  compared to last month
+                </span>
               </div>
             </CardContent>
           </Card>
