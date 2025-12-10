@@ -29,9 +29,7 @@ export const useCategorySelectStore = create<CategorySelectState>()(
                 set({ isLoading: true, error: null })
                 const endpoint = `${env.ENDPOINTS.CATEGORY.SELECT_LIST}${search ? `?search=${encodeURIComponent(search)}` : ""}`
                 const url = `${endpoint}`
-                console.log(`Category Fetch URL: ${url}`)
                 const res = await apiClient.get<CategorySelectItem[]>(url)
-                console.log(`Category Response:`, res)
                 if (res.isSuccess && res.data) {
                     set({ options: res.data, isLoading: false })
                     return res.data

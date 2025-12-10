@@ -9,12 +9,12 @@ import { Input } from "@/shared/ui/input"
 import { Badge } from "@/shared/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import { Plus, MoreHorizontal, Eye, Edit, Trash2, Search, History, PackagePlus } from "lucide-react"
+import { Plus, MoreHorizontal, Eye, Edit, Trash2, Search, History, PackagePlus, Zap } from "lucide-react" // Đã thêm Zap
 import { ROUTES } from "@/core/config/routes"
 import { STATUS_VARIANTS } from "@/core/config/constants"
 import { productService } from "@/entities/products/services/product"
 import { useToast } from "@/hooks/use-toast"
-import { useDebounce } from "@/hooks/use-debounce"   // ← Import hook
+import { useDebounce } from "@/hooks/use-debounce"
 import ProductInventoryDialog from "@/features/product-inventory/product-inventory-dialog"
 import {
   Select,
@@ -37,8 +37,8 @@ export default function ProductList() {
   const limit = 10
 
   // Search state
-  const [searchTerm, setSearchTerm] = useState("")                    // ← UI input
-  const debouncedSearch = useDebounce(searchTerm, 400)                // ← Debounced value
+  const [searchTerm, setSearchTerm] = useState("")
+  const debouncedSearch = useDebounce(searchTerm, 400)
   const [stockStatus, setStockStatus] = useState<"" | "all" | "in-stock" | "low-stock" | "out-of-stock">("")
 
   // Dialog state
@@ -95,20 +95,16 @@ export default function ProductList() {
     }
   }
 
-  // Gọi API khi page hoặc debouncedSearch thay đổi
   useEffect(() => {
     fetchProducts()
   }, [page, debouncedSearch, stockStatus])
 
-
-  // Focus lại input sau khi loading xong
   useEffect(() => {
     if (!loading && searchInputRef.current) {
       searchInputRef.current.focus()
     }
   }, [loading])
 
-  // Xóa sản phẩm
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return
     try {
@@ -133,7 +129,6 @@ export default function ProductList() {
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price)
-
 
   if (loading && products.length === 0) {
     return (
@@ -165,7 +160,6 @@ export default function ProductList() {
               ref={searchInputRef}
               placeholder="Search products by name, category..."
               value={searchTerm}
-              // ✅ SỬA LẠI ĐOẠN NÀY
               onChange={(e) => {
                 setSearchTerm(e.target.value)
                 setPage(1)
@@ -174,10 +168,9 @@ export default function ProductList() {
             />
           </div>
 
-          {/* Stock Status Filter */}
           <Select value={stockStatus} onValueChange={(value) => {
             setStockStatus(value as "" | "all" | "in-stock" | "low-stock" | "out-of-stock")
-            setPage(1) // reset về trang 1 khi đổi filter
+            setPage(1)
           }}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Stock status" />
@@ -220,95 +213,120 @@ export default function ProductList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell>
-                  <div className="flex items-center space-x-3">
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                      <img
-                        src={product.primaryImage || "/placeholder.svg"}
-                        alt={product.name}
-                        className="object-cover w-full h-full"
-                      />
+            {products.map((product) => {
+              // ========================================================
+              // === LOGIC TÍNH GIÁ HIỂN THỊ ===
+              // ========================================================
+              const originalPrice = product.price; // Giá gốc (Price)
+
+              // 1. Xác định giá đã giảm cố định (nếu có)
+              // discountPrice là giá SAU KHI giảm (ví dụ: gốc 100k, giảm còn 90k -> discountPrice = 90k)
+              const hasFixedDiscount = product.discountPrice != null && product.discountPrice > 0;
+              const basePrice = hasFixedDiscount ? product.discountPrice : originalPrice;
+
+              // 2. Tính tiền giảm thêm từ sự kiện (theo % của giá GỐC)
+              const eventPercent = product.eventDiscountPercentage || 0;
+              const eventDeductionAmount = (originalPrice * eventPercent) / 100;
+
+              // 3. Giá hiển thị cuối cùng = Base - EventDeduction
+              const finalPrice = Math.max(0, basePrice - eventDeductionAmount);
+
+              const isDiscounted = finalPrice < originalPrice;
+              // ========================================================
+
+              return (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                        <img
+                          src={product.primaryImage || "/placeholder.svg"}
+                          alt={product.name}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                      <div className="font-medium">{product.name}</div>
                     </div>
-                    <div className="font-medium">{product.name}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{product.category?.name || "No Category"}</Badge>
-                </TableCell>
-                <TableCell>
-                  {product.discountPrice != null && product.discountPrice > 0 && product.discountPrice < product.price ? (
-                    <div className="flex items-end gap-2 flex-wrap">
-                      {/* Giá gốc - bị gạch ngang */}
-                      <span className="text-sm text-muted-foreground line-through">
-                        {formatPrice(product.price)}
-                      </span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{product.category?.name || "No Category"}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {isDiscounted ? (
+                      <div className="flex flex-col gap-1 items-start">
+                        {/* Giá gốc gạch ngang */}
+                        <span className="text-sm text-muted-foreground line-through">
+                          {formatPrice(originalPrice)}
+                        </span>
 
-                      {/* Giá thực tế khách trả = price - discountPrice */}
-                      <span className="font-bold text-lg text-red-600">
-                        {formatPrice(product.price - product.discountPrice)}
-                      </span>
+                        {/* Giá cuối cùng */}
+                        <span className="font-bold text-red-600">
+                          {formatPrice(finalPrice)}
+                        </span>
 
-                      {/* Badge giảm giá - ưu tiên % nếu >=5%, không thì hiện số tiền giảm */}
-                      <Badge variant="destructive" className="text-xs">
-                        {(() => {
-                          const discountAmount = product.discountPrice
-                          const discountPercent = Math.round((discountAmount / product.price) * 100)
-
-                          return `- ${formatPrice(discountAmount).replace("₫", "").trim()}₫`
-
-                        })()}
-                      </Badge>
+                        {/* Badges chi tiết */}
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {hasFixedDiscount && (
+                            <Badge variant="secondary" className="text-[10px] h-5 px-1 bg-gray-200 text-gray-700">
+                              Sale
+                            </Badge>
+                          )}
+                          {eventPercent > 0 && (
+                            <Badge className="text-[10px] h-5 px-1 bg-yellow-500 text-white hover:bg-yellow-600 border-none">
+                              <Zap className="w-3 h-3 mr-0.5 fill-current" />
+                              -{eventPercent}%
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="font-medium">{formatPrice(originalPrice)}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col space-y-1">
+                      <span className="text-sm">{product.stockQuantity} units</span>
+                      {getStockBadge(product.stockQuantity)}
                     </div>
-                  ) : (
-                    /* Không có giảm giá */
-                    <span className="font-medium">{formatPrice(product.price)}</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col space-y-1">
-                    <span className="text-sm">{product.stockQuantity} units</span>
-                    {getStockBadge(product.stockQuantity)}
-                  </div>
-                </TableCell>
-                <TableCell>{getStatusBadge(product.status)}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => {
-                        setSelectedProductId(product.id)
-                        setCreateDialogOpen(true)
-                      }}>
-                        <PackagePlus className="mr-2 h-4 w-4" />
-                        Import goods
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_INVENTORY_LIST(product.id))}>
-                        <History className="mr-2 h-4 w-4" />
-                        Import history
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_DETAIL(product.id))}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_EDIT(product.id))}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(product.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(product.status)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedProductId(product.id)
+                          setCreateDialogOpen(true)
+                        }}>
+                          <PackagePlus className="mr-2 h-4 w-4" />
+                          Import goods
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_INVENTORY_LIST(product.id))}>
+                          <History className="mr-2 h-4 w-4" />
+                          Import history
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_DETAIL(product.id))}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(ROUTES.PRODUCT_EDIT(product.id))}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(product.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
 
