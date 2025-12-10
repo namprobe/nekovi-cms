@@ -7,8 +7,9 @@ import { Button } from "@/shared/ui/button"
 import { ArrowLeft, Plus } from "lucide-react"
 import { ROUTES } from "@/core/config/routes"
 
-export default function ProductInventoryPage({ params }: { params: { id: string } }) {
-    const productId = params.id
+export default async function ProductInventoryPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+    const productId = id
 
     return (
         <div className="space-y-6">
