@@ -1,4 +1,4 @@
-//src/features/products/components/view-product-detail.tsx
+// src/features/products/components/view-product-detail.tsx
 "use client"
 
 import { useEffect } from "react"
@@ -7,7 +7,7 @@ import { useProductDetail } from "@/features/products/hooks/use-products"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Badge } from "@/shared/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
-import { Calendar, DollarSign, Package, Star, Tag, User, TrendingUp } from "lucide-react"
+import { Calendar, DollarSign, Package, Star, Tag, User, TrendingUp, Zap } from "lucide-react" // Đã thêm Zap
 import { useToast } from "@/hooks/use-toast"
 import { ROUTES } from "@/core/config/routes"
 import { JSX } from "react/jsx-runtime"
@@ -43,6 +43,24 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
         price !== undefined
             ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price)
             : "N/A"
+
+    // ========================================================
+    // === LOGIC TÍNH TOÁN GIÁ (Đã cập nhật theo yêu cầu) ===
+    // ========================================================
+    const originalPrice = product.price || 0;
+
+    // 1. discountPrice là giá sau khi đã giảm (nếu có)
+    const hasFixedDiscount = product.discountPrice != null && product.discountPrice > 0;
+    const basePrice = hasFixedDiscount ? product.discountPrice! : originalPrice;
+
+    // 2. Event Discount Percentage tính trên giá gốc
+    const eventPercent = product.eventDiscountPercentage || 0;
+    const eventDeduction = (originalPrice * eventPercent) / 100;
+
+    // 3. Final Price
+    const finalPrice = Math.max(0, basePrice - eventDeduction);
+    const isDiscounted = finalPrice < originalPrice;
+    // ========================================================
 
     const InfoRow = ({
         icon,
@@ -84,11 +102,29 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
                     label="Stock Quantity"
                     value={product.stockQuantity?.toString() ?? "N/A"}
                 />
+
+                {/* Hiển thị rõ giá cố định đã giảm (nếu có) */}
                 <InfoRow
                     icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
-                    label="Discount Price"
-                    value={product.discountPrice ? `-${formatPrice(product.discountPrice)}` : "N/A"}
+                    label="Fixed Price"
+                    value={
+                        hasFixedDiscount
+                            ? <span className="text-gray-700">{formatPrice(product.discountPrice!)} <span className="text-xs text-muted-foreground">(Discounted)</span></span>
+                            : <span className="text-gray-500">None</span>
+                    }
                 />
+
+                {/* Hiển thị % giảm sự kiện */}
+                <InfoRow
+                    icon={<Zap className="h-4 w-4 text-yellow-500" />}
+                    label="Event Discount"
+                    value={
+                        eventPercent > 0
+                            ? <span className="text-yellow-600 font-bold">-{eventPercent}% (on Orig. Price)</span>
+                            : <span className="text-gray-500">None</span>
+                    }
+                />
+
                 <InfoRow
                     icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
                     label="Created At"
@@ -141,14 +177,22 @@ export function ViewProductDetail({ productId }: ViewProductDetailProps) {
         </div>
     )
 
-    // 🔥 Nổi bật ba chỉ số chính: Price, Rating, Total Sales
+    // 🔥 Highlight Stats: Hiển thị giá cuối cùng (Final Price)
     const HighlightStats = () => (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex flex-col items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-50 p-4 rounded-xl shadow-sm border">
                 <DollarSign className="h-6 w-6 text-emerald-600 mb-1" />
-                <span className="text-sm text-muted-foreground">Price</span>
-                {/* ✅ Giá tiền tự động hiển thị VND do hàm formatPrice đã sửa */}
-                <span className="text-xl font-bold text-emerald-700">{formatPrice(product.price)}</span>
+                <span className="text-sm text-muted-foreground">Current Price</span>
+
+                {/* Giá cuối cùng */}
+                <span className="text-xl font-bold text-emerald-700">{formatPrice(finalPrice)}</span>
+
+                {/* Giá gốc gạch ngang nếu có giảm */}
+                {isDiscounted && (
+                    <span className="text-xs text-muted-foreground line-through mt-1">
+                        Original: {formatPrice(originalPrice)}
+                    </span>
+                )}
             </div>
             <div className="flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-yellow-50 p-4 rounded-xl shadow-sm border">
                 <Star className="h-6 w-6 text-amber-500 mb-1" />

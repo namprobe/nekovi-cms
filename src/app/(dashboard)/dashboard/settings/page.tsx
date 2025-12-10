@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation" // 1. Import hooks điều hướng
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
@@ -13,6 +14,26 @@ import { Settings, Save, User, Bell, Shield } from "lucide-react"
 
 export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
+
+  // 2. Khởi tạo các hooks
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // 3. Lấy tab hiện tại từ URL, mặc định là 'general' nếu không có
+  const activeTab = searchParams.get("tab") || "general"
+
+  // 4. Hàm xử lý khi đổi tab
+  const handleTabChange = (value: string) => {
+    // Tạo đối tượng params mới từ params hiện tại
+    const params = new URLSearchParams(searchParams.toString())
+    // Set giá trị tab mới
+    params.set("tab", value)
+
+    // Đẩy URL mới vào browser mà không load lại trang
+    // { scroll: false } giúp trang không bị nhảy lên đầu khi đổi tab
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   const handleSave = async () => {
     setIsLoading(true)
@@ -30,7 +51,8 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
+      {/* 5. Sử dụng value và onValueChange thay vì defaultValue */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general">
             <Settings className="w-4 h-4 mr-2" />
@@ -77,8 +99,8 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
+                <Textarea
+                  id="description"
                   defaultValue="NekoVi Content Management System for anime merchandise"
                   rows={3}
                 />
