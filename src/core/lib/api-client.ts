@@ -522,6 +522,7 @@ class ApiClient {
 // Create instances for different API bases
 export const cmsApiClient = new ApiClient(env.BASE_URL + env.CMS_PREFIX)
 export const commonApiClient = new ApiClient(env.BASE_URL + env.COMMON_PREFIX)
+export const rootApiClient = new ApiClient(env.BASE_URL)
 export const accessTokenExpiresInHour = env.TOKEN_EXPIRY
 
 // Default export cho CMS (primary usage)

@@ -37,21 +37,25 @@ export enum AddressType {
   Other = 3,
 }
 
+// Align with backend enums (NekoViBE.Domain.Enums.OrderStatusEnum)
+// 0=Processing, 1=Confirmed, 2=Shipping, 3=Delivered, 4=Cancelled, 5=Returned, 6=Failed
 export enum OrderStatus {
-  Pending = 1,
-  Processing = 2,
-  Shipped = 3,
-  Delivered = 4,
-  Cancelled = 5,
-  Returned = 6,
+  Processing = 0,
+  Confirmed = 1,
+  Shipping = 2,
+  Delivered = 3,
+  Cancelled = 4,
+  Returned = 5,
+  Failed = 6,
 }
 
+// Align with backend enums (NekoViBE.Domain.Enums.PaymentStatusEnum)
+// 0=Pending, 1=Completed, 2=Failed, 3=Refunded
 export enum PaymentStatus {
-  Pending = 1,
-  Completed = 2,
-  Failed = 3,
-  Refunded = 4,
-  Cancelled = 5,
+  Pending = 0,
+  Completed = 1,
+  Failed = 2,
+  Refunded = 3,
 }
 
 export enum DiscountType {

@@ -128,6 +128,7 @@ const navigation = [
     children: [
       { name: "All Methods", href: ROUTES.SHIPPING_METHODS },
       { name: "Add Method", href: ROUTES.SHIPPING_METHOD_CREATE },
+      { name: "GHN Webhook Simulator", href: ROUTES.WEBHOOK_SIMULATOR },
     ],
   },
   {
