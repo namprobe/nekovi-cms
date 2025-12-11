@@ -18,6 +18,7 @@ export const env = {
     APP_NAME: process.env.NEXT_PUBLIC_APP_NAME || "NekoVi CMS",
     APP_DESCRIPTION: process.env.NEXT_PUBLIC_APP_DESCRIPTION || "NekoVi CMS",
     APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0",
+    SHOP_ID: process.env.NEXT_PUBLIC_SHOP_ID || "1",
 
     //auth config
     JWT_SECRET: process.env.NEXT_PUBLIC_JWT_SECRET || "NekoViBE_SecretKey_ForJWT_Authentication_2025_EXE201",
@@ -121,6 +122,10 @@ export const env = {
             DETAIL: (id: string) => `/orders/${id}`,
             SHIPPING_HISTORY: (id: string) => `/orders/${id}/shipping-history`,
             EXPORT: `/orders/export`,
+        },
+        SHIPPING_ORDER: {
+            // Backend controller: [Route("api/shipping-order")], action: "ghn/simulate-callback"
+            SIMULATE_CALLBACK: `/api/shipping-order/ghn/simulate-callback`,
         },
         DASHBOARD: `/dashboard`,
         REPORTS: `/reports`,

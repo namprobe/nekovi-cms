@@ -83,6 +83,7 @@ export const ROUTES = {
   SHIPPING_METHOD_CREATE: "/dashboard/shipping-methods/create",
   SHIPPING_METHOD_EDIT: (id: string) => `/dashboard/shipping-methods/${id}/edit`,
   SHIPPING_METHOD_DETAIL: (id: string) => `/dashboard/shipping-methods/${id}`,
+  WEBHOOK_SIMULATOR: "/dashboard/shipping/webhook-simulator",
 
   // Reports
   REPORTS: "/dashboard/reports",
