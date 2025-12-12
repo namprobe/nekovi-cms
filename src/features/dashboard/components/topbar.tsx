@@ -37,11 +37,6 @@ export function Topbar() {
     <header className="h-16 bg-background border-b flex items-center justify-between px-6">
       <div className="flex items-center flex-1 max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search users, products, orders..."
-            className="pl-10 bg-muted border-0 focus:bg-background focus:ring-1 focus:ring-blue-500"
-          />
         </div>
       </div>
 
@@ -50,7 +45,7 @@ export function Topbar() {
           <Bell className="h-5 w-5" />
           <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">3</Badge>
         </Button>
-        
+
         <ThemeToggle />
 
         <DropdownMenu>
