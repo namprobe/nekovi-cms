@@ -152,12 +152,14 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
+            {/* 1. Đảm bảo DialogContent hiển thị flex column để footer luôn ở đáy */}
+            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0"> {/* Có thể dùng h-[90vh] để cố định chiều cao modal luôn lớn, hoặc max-h-[90vh] */}
+                <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle>Manage Products for: {eventTitle}</DialogTitle>
                 </DialogHeader>
 
-                <div className="flex-1 flex flex-col gap-4 overflow-hidden py-4">
+                {/* 2. Container chính: Thêm 'min-h-0' để flex-1 hoạt động đúng khi co lại */}
+                <div className="flex-1 flex flex-col gap-4 overflow-hidden p-6 min-h-0">
                     <div className="flex flex-col gap-2">
                         <Label>Add Products</Label>
                         <AsyncMultiSelect
@@ -168,13 +170,13 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                         />
                     </div>
 
-                    <div className="flex-1 border rounded-md relative overflow-hidden flex flex-col">
+                    {/* 3. Container chứa Table: Thêm 'min-h-0' */}
+                    <div className="flex-1 border rounded-md relative overflow-hidden flex flex-col min-h-0">
                         {/* Header Table cố định */}
-                        <div className="bg-muted/50 border-b">
+                        <div className="bg-muted/50 border-b z-10">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        {/* Set độ rộng cố định (%) cho các cột để thẳng hàng */}
                                         <TableHead className="w-[30%]">Product</TableHead>
                                         <TableHead className="w-[12%] text-right">Price</TableHead>
                                         <TableHead className="w-[12%] text-right">Base Disc.</TableHead>
@@ -187,7 +189,8 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                             </Table>
                         </div>
 
-                        <ScrollArea className="flex-1">
+                        {/* 4. ScrollArea: Thêm 'h-full' để đảm bảo nó chiếm toàn bộ không gian còn lại */}
+                        <ScrollArea className="flex-1 h-full w-full">
                             {loading ? (
                                 <div className="flex justify-center items-center h-40">
                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -200,27 +203,17 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                                 <Table>
                                     <TableBody>
                                         {items.map((item) => {
-                                            // 1. Determine the starting price (Base Price)
-                                            // If product has a discount price > 0, use it. Otherwise use original price.
                                             const basePrice = item.productDiscountPrice > 0 ? item.productDiscountPrice : item.originalPrice
-
-                                            // 2. Calculate Event Discount Amount
-                                            // Formula: originalPrice * discountPercentage%
                                             const eventDiscountAmount = (item.originalPrice * item.discountPercentage) / 100
-
-                                            // 3. Calculate New Price
-                                            // Formula: basePrice - eventDiscountAmount
                                             const finalPrice = basePrice - eventDiscountAmount
                                             const displayPrice = finalPrice > 0 ? finalPrice : 0
 
                                             return (
                                                 <TableRow key={item.productId}>
-                                                    {/* Cột 1: Product Name */}
                                                     <TableCell className="w-[30%] align-middle">
                                                         <div className="font-medium line-clamp-2" title={item.productName}>
                                                             {item.productName}
                                                         </div>
-                                                        {/* Optional: Show if using product discount */}
                                                         {item.productDiscountPrice > 0 && (
                                                             <span className="text-xs text-muted-foreground">
                                                                 (Has product discount)
@@ -228,12 +221,10 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                                                         )}
                                                     </TableCell>
 
-                                                    {/* Cột 2: Price gốc */}
                                                     <TableCell className="w-[12%] text-right align-middle text-muted-foreground line-through">
                                                         {formatCurrency(item.originalPrice)}
                                                     </TableCell>
 
-                                                    {/* Cột 3: Base Price (Giá sau khi giảm ở Product) */}
                                                     <TableCell className="w-[12%] text-right align-middle font-medium">
                                                         {item.productDiscountPrice > 0
                                                             ? formatCurrency(item.productDiscountPrice)
@@ -241,33 +232,32 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                                                         }
                                                     </TableCell>
 
-                                                    {/* Cột 4: Input Discount % (Giảm thêm theo Event) */}
                                                     <TableCell className="w-[15%] align-middle">
-                                                        <div className="flex justify-center items-center gap-1">
-                                                            <Input
-                                                                type="number"
-                                                                min={0}
-                                                                max={100}
-                                                                className="w-16 h-8 text-center"
-                                                                value={item.discountPercentage}
-                                                                onChange={(e) => updateItem(item.productId, "discountPercentage", e.target.value)}
-                                                            />
-                                                            <span className="text-sm text-muted-foreground">%</span>
-                                                        </div>
-                                                        {/* Optional: Show amount being deducted */}
-                                                        {item.discountPercentage > 0 && (
-                                                            <div className="text-[10px] text-center text-red-500 mt-1">
-                                                                -{formatCurrency(eventDiscountAmount)}
+                                                        <div className="flex flex-col items-center justify-center gap-1">
+                                                            <div className="flex items-center gap-1">
+                                                                <Input
+                                                                    type="number"
+                                                                    min={0}
+                                                                    max={100}
+                                                                    className="w-16 h-8 text-center"
+                                                                    value={item.discountPercentage}
+                                                                    onChange={(e) => updateItem(item.productId, "discountPercentage", e.target.value)}
+                                                                />
+                                                                <span className="text-sm text-muted-foreground">%</span>
                                                             </div>
-                                                        )}
+
+                                                            {item.discountPercentage > 0 && (
+                                                                <div className="text-[10px] text-red-500 font-medium">
+                                                                    -{formatCurrency(eventDiscountAmount)}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </TableCell>
 
-                                                    {/* Cột 5: New Price (Giá cuối cùng) */}
                                                     <TableCell className="w-[15%] text-right align-middle font-bold text-green-600">
                                                         {formatCurrency(displayPrice)}
                                                     </TableCell>
 
-                                                    {/* Cột 6: Featured */}
                                                     <TableCell className="w-[10%] align-middle">
                                                         <div className="flex justify-center">
                                                             <Button
@@ -281,7 +271,6 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                                                         </div>
                                                     </TableCell>
 
-                                                    {/* Cột 7: Delete */}
                                                     <TableCell className="w-[6%] align-middle">
                                                         <Button
                                                             variant="ghost"
@@ -302,7 +291,7 @@ export function EventProductModal({ isOpen, onClose, eventId, eventTitle }: Even
                     </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="px-6 py-4 border-t bg-background">
                     <Button variant="outline" onClick={onClose} disabled={saving}>
                         Cancel
                     </Button>
